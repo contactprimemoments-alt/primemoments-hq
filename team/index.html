@@ -161,7 +161,7 @@ const mine=()=>{const me=(DATA.team||[]).find(m=>m.id===who);if(!me)return null;
 const SW=()=>DATA.swaps||[];
 const nameOf=id=>(((DATA.team||[]).find(m=>m.id===id)||{}).naam||"iemand").split(" ")[0];
 const openFrom=(x,me)=>SW().find(w=>w.booking===x.id&&w.from===me.id&&w.status==="open");
-const forMe=(M)=>SW().filter(w=>w.status==="open"&&w.from!==M.me.id&&(w.to===M.me.id||(!w.to&&!M.all.some(x=>x.id===w.booking))));
+const forMe=(M)=>SW().filter(w=>w.status==="open"&&(DATA.shifts||[]).some(x=>x.id===w.booking)&&w.from!==M.me.id&&(w.to===M.me.id||(!w.to&&!M.all.some(x=>x.id===w.booking))));
 const fmtD=s=>{const d=pd(s);return d?d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"short"}):"datum volgt"};
 const others=(x,me)=>(x.team||[]).filter(id=>id!==me.id).map(id=>((DATA.team||[]).find(m=>m.id===id)||{}).naam).filter(Boolean).map(n=>n.split(" ")[0]);
 const initials=m=>esc((m.code||m.naam||"?").slice(0,2).toUpperCase());
