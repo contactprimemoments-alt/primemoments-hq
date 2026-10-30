@@ -293,6 +293,7 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 /* ================= constants ================= */
 const CO={naam:"Prime Moments",eig:"Hatice Kulak (eenmanszaak)",adres:"Pastoor Paquaylaan 164",plaats:"3550 Heusden, België",ond:"BE 1039.371.331",mail:"contact.primemoments@gmail.com",tel:"+32 468 37 10 09",iban:"BE39 7390 3465 9919",bic:"KREDBEBB",web:"primemoments.live"};
 const COLS=["bookings","leads","tasks","partners","recurring","companies","invoices","purchases","inventory","blocks","team","swaps"];
+const FEED_URL="https://unktazjceutqoduzjnfq.supabase.co/functions/v1/agenda";
 const TEAM_URL=new URL("team/",location.href.split("#")[0]).href;
 const S={settings:{drempel:{"2026":961.08,"2027":1922.16},usd:0.86}};COLS.forEach(c=>S[c]=[]);
 const ICON={
@@ -453,7 +454,7 @@ V.agenda=()=>{
   const total=S.bookings.filter(b=>(b.datum||"").startsWith(ym)).reduce((a,b)=>a+vid(b),0);
   const reqList=openLeads().filter(l=>sel?l.datum===sel:(l.datum||"").startsWith(ym));
   return `<div class="ph"><div><div class="eyebrow">Planning</div><h1>${cap(MAANDL[m])} ${y}</h1></div>
-   <div class="acts cal-nav"><button class="btn ghost" data-cal="-1" aria-label="Vorige maand">‹</button><button class="btn ghost" data-cal="0">Vandaag</button><button class="btn ghost" data-cal="1" aria-label="Volgende maand">›</button><button class="btn" data-newb="${sel||""}">+ Boeking</button></div></div>
+   <div class="acts cal-nav"><button class="btn ghost" data-cal="-1" aria-label="Vorige maand">‹</button><button class="btn ghost" data-cal="0">Vandaag</button><button class="btn ghost" data-cal="1" aria-label="Volgende maand">›</button><button class="btn ghost" data-gcal>Google Agenda</button><button class="btn" data-newb="${sel||""}">+ Boeking</button></div></div>
   <div class="cal"><div class="cal-head">${DAG.map(d=>`<span>${d}</span>`).join("")}</div><div class="cal-grid">${cells}</div></div>
   <div class="legend"><span><i style="background:var(--ok)"></i>Bevestigd</span><span><i style="background:var(--warn)"></i>Gereserveerd</span><span><i style="background:var(--done)"></i>Afgerond</span><span><i style="background:var(--bad)"></i>Geannuleerd</span><span><i style="background:var(--sand);border:1px solid var(--line)"></i>Niet beschikbaar</span><span><i style="background:var(--info)"></i>Aanvraag</span></div>
   <section class="block" style="margin-top:22px"><h2>${sel?cap(new Date(pd(sel)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})):"Deze maand"} <span class="meta">${sel?`<a href="#agenda" data-clearsel>toon hele maand</a>`:`${list.filter(b=>b.status!=="Geannuleerd").length} boekingen · ${eur(total)}`}</span></h2>
@@ -673,8 +674,20 @@ V.team=()=>{const ym=iso(now()).slice(0,7);const T=[...S.team].sort((a,b)=>(b.ac
    <span>2. Tik op <b>Uitnodiging</b> en stuur het bericht via WhatsApp: daarin staan de link naar de team-app en de teamcode.</span>
    <span>3. In de team-app tikken ze op hun naam en zien ze hun shoots en uren. Geen prijzen, geen facturen, geen telefoonnummers van klanten.</span>
   </div></div><p class="note">Teamcode: <b>${esc(S.settings.teamCode||"–")}</b> · <a href="${TEAM_URL}" target="_blank" rel="noopener">open de team-app</a></p></section>`};
+function copyBtnHandler(sc){sc.addEventListener("click",async e=>{const b=e.target.closest("[data-cp]");if(!b)return;const el=sc.querySelector("#"+b.dataset.cp);try{await navigator.clipboard.writeText(el.textContent);toast("Gekopieerd")}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Geselecteerd, kopieer met je toetsenbord")}})}
+function openGcal(){const url=S.settings.feedToken?`${FEED_URL}?token=${S.settings.feedToken}`:"";
+  const {sc}=openSheet(`<h3>Koppelen aan Google Agenda</h3><p class="sub">Al je boekingen, aanvragen en verlof komen automatisch in een aparte agenda "Prime Moments HQ", met prijzen, team en details.</p>
+   <div class="msgbox" id="gc-url" style="word-break:break-all">${esc(url||"Link nog niet klaar")}</div>
+   <div style="margin:10px 0 16px"><button class="btn" data-cp="gc-url">Kopieer link</button></div>
+   <div class="kv" style="grid-template-columns:1fr;padding:0">
+    <span><b>Op je computer (Google Agenda):</b> ga naar calendar.google.com › links bij <b>Andere agenda's</b> op <b>+</b> › <b>Via URL</b> › plak de link › <b>Agenda toevoegen</b>.</span>
+    <span><b>Op je iPhone (Apple Agenda):</b> Instellingen › Agenda › Accounts › Voeg account toe › Andere › <b>Voeg agenda-abonnement toe</b> › plak de link.</span>
+    <span><b>Goed om te weten:</b> Google haalt de agenda zelf op, meestal om de paar uur. Een wijziging staat dus niet meteen in Google, maar wel meteen hier in je HQ. Zet vanaf nu je boekingen alleen nog in je HQ, anders staan ze dubbel.</span>
+   </div><p class="note">Deel deze link met niemand: wie hem heeft, ziet je volledige agenda met prijzen.</p>
+   <div class="actions"><div></div><div><button class="btn ghost" data-close>Sluit</button></div></div>`);copyBtnHandler(sc)}
 function openInvite(id){const m=S.team.find(x=>x.id===id);if(!m)return;const code=S.settings.teamCode||"–";
-  const msg=`Hoi ${(m.naam||"").split(" ")[0]}! Vanaf nu vind je je planning voor Prime Moments in onze team-app.\n\n1. Open: ${TEAM_URL}\n2. Geef de teamcode in: ${code}\n3. Tik op je naam\n\nTip: zet de pagina op je beginscherm (Delen › Zet op beginscherm), dan werkt ze als een app. – Hatice`;
+  const feed=m.feedToken?`${FEED_URL}?m=${m.id}&token=${m.feedToken}`:"";
+  const msg=`Hoi ${(m.naam||"").split(" ")[0]}! Vanaf nu vind je je planning voor Prime Moments in onze team-app.\n\n1. Open: ${TEAM_URL}\n2. Geef de teamcode in: ${code}\n3. Tik op je naam\n\nTip: zet de pagina op je beginscherm (Delen › Zet op beginscherm), dan werkt ze als een app.`+(feed?`\n\nWil je je shoots ook automatisch in de agenda van je gsm?\niPhone: Instellingen › Agenda › Accounts › Voeg account toe › Andere › Voeg agenda-abonnement toe, en plak deze link:\n${feed}\nGoogle Agenda: calendar.google.com › Andere agenda's › + › Via URL, en plak dezelfde link.`:"")+` – Hatice`;
   const {sc,close}=openSheet(`<h3>Uitnodiging voor ${esc(m.naam)}</h3><p class="sub">Eén teamcode voor het hele team. Wie de code heeft, ziet de planning (zonder prijzen).</p>
    <div class="codebox">${esc(code)}</div>
    <p class="note" style="margin:14px 0 6px">Bericht om te sturen</p><div class="msgbox" id="inv-msg">${esc(msg)}</div>
@@ -865,6 +878,7 @@ matchMedia("(min-width:960px)").addEventListener?.("change",renderNav);
 document.addEventListener("click",async e=>{
   if(e.target.closest(".scrim"))return;
   if(e.target.closest("[data-goaandacht]")){UI.bFilter="aandacht";UI.bSearch="";return}
+  if(e.target.closest("[data-gcal]"))return openGcal();
   const tt_=e.target.closest("[data-tt]");if(tt_){UI.tt=tt_.dataset.tt;return render()}
   const tay=e.target.closest("[data-tay]");if(tay){UI.taYear=tay.dataset.tay;return render()}
   if(e.target.closest("[data-endpreview]")){UI.preview=null;CREW.un.forEach(f=>{try{f()}catch(_){}});CREW.un=[];location.hash="team";return render()}
@@ -947,6 +961,7 @@ async function start(){const {data:{session}}=await SB.auth.getSession();if(!ses
   const done=c=>{pending.delete(c);if(!pending.size&&!ready)ready=true;rerender()};
   COLS.forEach(c=>db.collection(c).onSnapshot(s=>{S[c]=s.docs.map(x=>Object.assign({id:x.id},x.data()));done(c)},()=>done(c)));
   db.doc("settings/finance").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,s.data());rerender()},()=>{});
+  db.doc("settings/feed").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,{feedToken:s.data().token});rerender()},()=>{});
   db.doc("settings/team").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,{teamCode:s.data().teamCode});rerender()},()=>{});
   setTimeout(()=>{if(!ready){ready=true;render()}},8000)}
 start();
