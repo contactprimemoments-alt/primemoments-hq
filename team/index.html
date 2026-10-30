@@ -65,6 +65,18 @@ section>h2 span{font-family:var(--body);font-size:13px;color:var(--muted);font-w
 .hrs{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 td,th{padding:10px 14px;border-top:1px solid var(--line);text-align:right}th{border-top:0;color:var(--muted);font-weight:500;font-size:12px}td:first-child,th:first-child{text-align:left}
+.row{background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;cursor:pointer}
+.row:hover{background:var(--sand2)}
+.more{font-size:12px;color:var(--accent);margin-top:6px;font-weight:500}
+.scrim{position:fixed;inset:0;background:rgba(15,12,10,.5);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+@media (min-width:640px){.scrim{align-items:center}.sheet{border-radius:20px}}
+.sheet h2{font-size:24px;margin:4px 0 2px}
+.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 14px;margin:18px 0;font-size:14px}
+.kv dt{color:var(--muted);font-size:13px}.kv dd{margin:0;overflow-wrap:anywhere}
+.warnbox{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
+.sheet .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+a.btn{text-decoration:none;display:inline-block}
 .empty{padding:22px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:16px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -99,7 +111,7 @@ function render(){const A=$("#app");
   const up=all.filter(x=>daysTo(x.datum)===null||daysTo(x.datum)>=0),past=all.filter(x=>daysTo(x.datum)!==null&&daysTo(x.datum)<0).reverse();
   const nx=up.find(x=>x.datum);const months={};all.forEach(x=>{if(!x.datum)return;const k=x.datum.slice(0,7);months[k]=months[k]||{n:0,u:0};months[k].n++;months[k].u+=hours(x)});
   const others=s=>(s.team||[]).filter(id=>id!==me.id).map(id=>(T.find(m=>m.id===id)||{}).naam).filter(Boolean);
-  const card=x=>{const d=pd(x.datum);const o=others(x);return `<div class="row"><div class="date">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}</span>`:`<b>?</b><span>datum</span>`}</div><div style="min-width:0"><div class="t">${d?cap(d.toLocaleDateString("nl-BE",{weekday:"long"}))+" · ":""}${x.start?esc(x.start)+(x.eind?"–"+esc(x.eind):""):"uur volgt"}</div><div class="d">${esc(x.klant)}${x.event?" · "+esc(x.event):""}</div><div class="d">${esc(x.locatie||"Locatie volgt")}</div>${x.notitie?`<div class="n">${esc(x.notitie)}</div>`:""}<div class="pills">${x.status==="Gereserveerd"?`<span class="pill warn">Nog niet zeker</span>`:""}${o.length?`<span class="pill">Met ${esc(o.join(", "))}</span>`:""}</div></div><div class="hrs">${hours(x)?hours(x)+" u":""}</div></div>`};
+  const card=x=>{const d=pd(x.datum);const o=others(x);return `<button class="row" data-shift="${esc(x.id)}"><div class="date">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}</span>`:`<b>?</b><span>datum</span>`}</div><div style="min-width:0"><div class="t">${d?cap(d.toLocaleDateString("nl-BE",{weekday:"long"}))+" · ":""}${x.start?esc(x.start)+(x.eind?"–"+esc(x.eind):""):"uur volgt"}</div><div class="d">${esc(x.klant)}${x.event?" · "+esc(x.event):""}</div><div class="d">${esc(x.locatie||"Locatie volgt")}</div>${x.notitie?`<div class="n">${esc(x.notitie)}</div>`:""}<div class="pills">${x.status==="Gereserveerd"?`<span class="pill warn">Nog niet zeker</span>`:""}${o.length?`<span class="pill">Met ${esc(o.join(", "))}</span>`:""}${x.portfolio==="Nee"?`<span class="pill warn">Niet delen</span>`:""}</div><div class="more">Details ›</div></div><div class="hrs">${hours(x)?hours(x)+" u":""}</div></button>`};
   const dn=nx?daysTo(nx.datum):null;
   A.innerHTML=`${top}<div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><h1 style="font-size:30px">Hoi ${esc((me.naam||"").split(" ")[0])}</h1>
    ${nx?`<div class="next"><div class="big">${dn===0?"Vandaag":dn}${dn===0?"":`<small>${dn===1?"dag":"dagen"}</small>`}</div><div><div class="lbl">Je volgende shoot · ${pd(nx.datum).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?nx.start+(nx.eind?"–"+nx.eind:""):"",nx.locatie].filter(Boolean).map(esc).join(" · ")}</div></div></div>`:`<div style="height:18px"></div>`}
@@ -107,7 +119,20 @@ function render(){const A=$("#app");
    <section><h2>Urenoverzicht</h2>${Object.keys(months).length?`<div class="list"><table><thead><tr><th>Maand</th><th>Shoots</th><th>Uren</th></tr></thead><tbody>${Object.keys(months).sort().reverse().map(k=>`<tr><td>${cap(MAANDL[+k.slice(5,7)-1])} ${k.slice(0,4)}</td><td>${months[k].n}</td><td>${Math.round(months[k].u*10)/10} u</td></tr>`).join("")}</tbody></table></div><p class="note">Volgens de geplande start- en einduren.</p>`:`<div class="empty">Nog geen uren.</div>`}</section>
    ${past.length?`<section><h2>Voorbije shoots <span>${past.length}</span></h2><div class="list">${past.slice(0,10).map(card).join("")}</div></section>`:""}
    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" data-switch>Andere persoon</button><button class="btn ghost sm" data-refresh>Vernieuwen</button></div>`}
-document.addEventListener("click",e=>{const w=e.target.closest("[data-who]");if(w){who=w.dataset.who;ls.set("pm-team-who",who);render();scrollTo(0,0)}
+function detail(id){const x=(DATA.shifts||[]).find(s=>s.id===id);if(!x)return;const T=DATA.team||[];const d=pd(x.datum);
+  const crew=(x.team||[]).map(i=>T.find(m=>m.id===i)).filter(Boolean).map(m=>m.naam+(m.rol?" ("+m.rol.toLowerCase()+")":"")).join(", ");
+  const row=(k,v)=>v?`<dt>${k}</dt><dd>${v}</dd>`:"";
+  const maps=x.locatie&&!/volgt|navragen/i.test(x.locatie)?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(x.locatie)}`:"";
+  const tel=(x.contact||"").match(/\+?[0-9][0-9 ]{7,}/);
+  const sc=document.createElement("div");sc.className="scrim";
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="eyebrow">${d?cap(d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})):"Datum volgt"}</div>
+   <h2>${esc(x.klant)}</h2><div class="note">${esc(x.event||"")}${x.status==="Gereserveerd"?" · nog niet zeker":""}</div>
+   ${x.notitie?`<div class="n" style="margin-top:14px;font-size:14px">${esc(x.notitie)}</div>`:""}
+   ${x.portfolio==="Nee"?`<div class="warnbox">De klant wil niet dat beelden gedeeld worden. Niets posten.</div>`:""}
+   <dl class="kv">${row("Uur",x.start?esc(x.start)+(x.eind?" – "+esc(x.eind):"")+(hours(x)?` (${hours(x)} u)`:""):"Volgt nog")}${row("Locatie",esc(x.locatie||"Volgt nog"))}${row("Koppel / namen",esc(x.namen||""))}${row("Contact klant",esc(x.contact||""))}${row("Fotograaf",esc(x.fotograaf||""))}${row("Team",esc(crew))}${row("Soort",esc([x.categorie,x.pakket].filter(Boolean).join(" · ")))}</dl>
+   <div class="acts">${maps?`<a class="btn" href="${maps}" target="_blank" rel="noopener">Route in Google Maps</a>`:""}${tel?`<a class="btn ghost" href="tel:${tel[0].replace(/\s/g,"")}">Bel klant</a>`:""}<button class="btn ghost" data-close>Sluit</button></div></div>`;
+  document.body.appendChild(sc);sc.addEventListener("click",e=>{if(e.target===sc||e.target.closest("[data-close]"))sc.remove()})}
+document.addEventListener("click",e=>{const sh=e.target.closest("[data-shift]");if(sh)return detail(sh.dataset.shift);const w=e.target.closest("[data-who]");if(w){who=w.dataset.who;ls.set("pm-team-who",who);render();scrollTo(0,0)}
   if(e.target.closest("[data-switch]")){who=null;ls.set("pm-team-who",null);render()}
   if(e.target.closest("[data-refresh]"))load()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&code)load()});
