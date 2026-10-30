@@ -107,6 +107,25 @@ h1,h2{font-family:var(--display);font-weight:600;margin:0;letter-spacing:-.01em;
 .plan .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
 .warnbox{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px;font-weight:500}
 .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.acts .btn{text-align:center}.acts .wide{grid-column:1/-1}
+.req{background:var(--surface);border:2px solid var(--accent);border-radius:18px;padding:14px;margin-bottom:10px}
+.req .t{font-weight:600}.req .d{font-size:13px;color:var(--muted);margin:2px 0 10px}
+.req .r{font-size:13px;background:var(--sand2);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+.req .b{display:flex;gap:8px}.req .b .btn{flex:1;text-align:center;padding:10px}
+.info{background:var(--sand2);border-radius:14px;padding:10px 12px;font-size:13px;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:9px 14px;cursor:pointer;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.sheet textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);min-height:70px;resize:vertical}
+.handbox{border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.tag.ok{background:var(--sand2);color:var(--ok)}
+.day.blk{background:repeating-linear-gradient(135deg,var(--sand2) 0 5px,var(--sand) 5px 9px);color:var(--muted)}
+.day.free{background:none}
+.slot{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.slot b{font-weight:600}.freebox{background:var(--surface);border:1px dashed var(--ok);color:var(--ok);border-radius:14px;padding:14px;text-align:center;font-weight:500;margin-bottom:10px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.form .full{grid-column:1/-1}
+.form label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+.form input,.form textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 2px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -126,9 +145,9 @@ const pd=s=>{if(!s)return null;const [y,m,d]=s.split("-").map(Number);return new
 const daysTo=s=>{const d=pd(s);return d?Math.round((d-now())/864e5):null};
 const hours=x=>{if(!x.start||!x.eind)return 0;const p=t=>{const [h,m]=t.split(":").map(Number);return h*60+(m||0)};let d=p(x.eind)-p(x.start);if(d<=0)d+=1440;return Math.round(d/6)/10};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(_){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(_){}}};
-const ICON={plan:'<path d="M4 6h16M4 12h16M4 18h10"/>',kal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',uren:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',voorbij:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'};
+const ICON={beschik:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',plan:'<path d="M4 6h16M4 12h16M4 18h10"/>',kal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',uren:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',voorbij:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'};
 const ico=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
-let DATA=null,code=ls.get("pm-team-code"),who=ls.get("pm-team-who"),err="",tab="plan",calM=null,calSel=null;
+let avM=null,avSel=null;let DATA=null,code=ls.get("pm-team-code"),who=ls.get("pm-team-who"),err="",tab="plan",calM=null,calSel=null;
 
 async function load(){if(!code){DATA=null;return render()}
   const {data,error}=await SB.rpc("team_schedule",{p_code:code});
@@ -139,6 +158,11 @@ async function load(){if(!code){DATA=null;return render()}
 const mine=()=>{const me=(DATA.team||[]).find(m=>m.id===who);if(!me)return null;
   const all=(DATA.shifts||[]).filter(s=>(s.team||[]).includes(me.id)).sort((a,b)=>(a.datum||"9999").localeCompare(b.datum||"9999")||(a.start||"").localeCompare(b.start||""));
   return {me,all,up:all.filter(x=>daysTo(x.datum)===null||daysTo(x.datum)>=0),past:all.filter(x=>daysTo(x.datum)!==null&&daysTo(x.datum)<0).reverse()}};
+const SW=()=>DATA.swaps||[];
+const nameOf=id=>(((DATA.team||[]).find(m=>m.id===id)||{}).naam||"iemand").split(" ")[0];
+const openFrom=(x,me)=>SW().find(w=>w.booking===x.id&&w.from===me.id&&w.status==="open");
+const forMe=(M)=>SW().filter(w=>w.status==="open"&&w.from!==M.me.id&&(w.to===M.me.id||(!w.to&&!M.all.some(x=>x.id===w.booking))));
+const fmtD=s=>{const d=pd(s);return d?d.toLocaleDateString("nl-BE",{weekday:"short",day:"numeric",month:"short"}):"datum volgt"};
 const others=(x,me)=>(x.team||[]).filter(id=>id!==me.id).map(id=>((DATA.team||[]).find(m=>m.id===id)||{}).naam).filter(Boolean).map(n=>n.split(" ")[0]);
 const initials=m=>esc((m.code||m.naam||"?").slice(0,2).toUpperCase());
 
@@ -146,7 +170,7 @@ function card(x,me){const d=pd(x.datum);const o=others(x,me);const time=x.start?
   return `<button class="card" data-shift="${esc(x.id)}"><div class="date">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}</span>`:`<b>?</b><span>datum</span>`}</div>
    <div style="min-width:0"><div class="c-t">${esc(x.klant)}${x.event?` <span style="font-weight:400;color:var(--muted)">· ${esc(x.event)}</span>`:""}</div>
    <div class="c-d">${d?cap(d.toLocaleDateString("nl-BE",{weekday:"short"}))+" · ":""}${esc(time)}${x.locatie&&!/volgt/i.test(x.locatie)?" · "+esc(x.locatie.split(",")[0]):""}</div>
-   ${o.length||x.status==="Gereserveerd"||x.portfolio==="Nee"?`<div class="c-x">${x.status==="Gereserveerd"?`<span class="tag warn">Nog niet zeker</span>`:""}${o.length?`<span class="tag">Met ${esc(o.join(" & "))}</span>`:""}${x.portfolio==="Nee"?`<span class="tag bad">Niet delen</span>`:""}</div>`:""}</div>
+   ${o.length||x.status==="Gereserveerd"||x.portfolio==="Nee"?`<div class="c-x">${x.status==="Gereserveerd"?`<span class="tag warn">Nog niet zeker</span>`:""}${o.length?`<span class="tag">Met ${esc(o.join(" & "))}</span>`:""}${x.portfolio==="Nee"?`<span class="tag bad">Niet delen</span>`:""}${openFrom(x,me)?`<span class="tag warn">Doorgegeven, wacht op antwoord</span>`:""}</div>`:(openFrom(x,me)?`<div class="c-x"><span class="tag warn">Doorgegeven, wacht op antwoord</span></div>`:"")}</div>
    <span class="chev" aria-hidden="true">›</span></button>`}
 
 function viewPlan(M){const {me,up}=M;const nx=up.find(x=>x.datum);
@@ -155,7 +179,10 @@ function viewPlan(M){const {me,up}=M;const nx=up.find(x=>x.datum);
   const thisWeek=rest.filter(x=>x.datum&&pd(x.datum)<=wkEnd),later=rest.filter(x=>!x.datum||pd(x.datum)>wkEnd);
   const groups={};later.forEach(x=>{const k=x.datum?x.datum.slice(0,7):"zzz";(groups[k]=groups[k]||[]).push(x)});
   const dn=nx?daysTo(nx.datum):null;
-  return `${nx?`<button class="hero" data-shift="${esc(nx.id)}"><div class="big">${dn===0?"Vandaag":dn}${dn===0?"":`<small>${dn===1?"dag":"dagen"}</small>`}</div><div style="min-width:0"><div class="lbl">Je volgende shoot · ${pd(nx.datum).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?nx.start+(nx.eind?"–"+nx.eind:""):"",nx.locatie&&!/volgt/i.test(nx.locatie)?nx.locatie.split(",")[0]:""].filter(Boolean).map(esc).join(" · ")||"Tik voor details"}</div></div></button>`:`<div class="empty">Er staan geen shoots voor jou gepland.</div>`}
+  const reqs=forMe(M);const news=SW().filter(w=>w.from===M.me.id&&(w.status==="aanvaard"||w.status==="geweigerd")).slice(0,3);
+  const reqHtml=reqs.map(w=>`<div class="req"><div class="t">${w.to?`${esc(nameOf(w.from))} vraagt of jij kan overnemen`:`${esc(nameOf(w.from))} zoekt iemand om over te nemen`}</div><div class="d">${esc(w.klant||"")}${w.event?" · "+esc(w.event):""} · ${esc(fmtD(w.datum))}${w.start?" · "+esc(w.start)+(w.eind?"–"+esc(w.eind):""):""}</div>${w.reden?`<div class="r">“${esc(w.reden)}”</div>`:""}<div class="b"><button class="btn" data-acc="${esc(w.id)}">Ik neem over</button>${w.to?`<button class="btn ghost" data-dec="${esc(w.id)}">Kan niet</button>`:""}</div></div>`).join("");
+  const newsHtml=news.map(w=>`<div class="info">${w.status==="aanvaard"?`✓ <b>${esc(nameOf(w.by))}</b> neemt ${esc(w.klant||"")} (${esc(fmtD(w.datum))}) van je over.`:`<b>${esc(nameOf(w.by))}</b> kan ${esc(w.klant||"")} (${esc(fmtD(w.datum))}) niet overnemen. Open de shoot om het aan iemand anders te vragen.`}</div>`).join("");
+  return reqHtml+newsHtml+`${nx?`<button class="hero" data-shift="${esc(nx.id)}"><div class="big">${dn===0?"Vandaag":dn}${dn===0?"":`<small>${dn===1?"dag":"dagen"}</small>`}</div><div style="min-width:0"><div class="lbl">Je volgende shoot · ${pd(nx.datum).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?nx.start+(nx.eind?"–"+nx.eind:""):"",nx.locatie&&!/volgt/i.test(nx.locatie)?nx.locatie.split(",")[0]:""].filter(Boolean).map(esc).join(" · ")||"Tik voor details"}</div></div></button>`:`<div class="empty">Er staan geen shoots voor jou gepland.</div>`}
    ${thisWeek.length?`<div class="sh"><h2>Deze week</h2><span>${thisWeek.length}</span></div><div class="cards">${thisWeek.map(x=>card(x,me)).join("")}</div>`:""}
    ${Object.keys(groups).sort().map(k=>`<div class="sh"><h2>${k==="zzz"?"Datum volgt":cap(MAANDL[+k.slice(5,7)-1])+(+k.slice(0,4)!==now().getFullYear()?" "+k.slice(0,4):"")}</h2><span>${groups[k].length}</span></div><div class="cards">${groups[k].map(x=>card(x,me)).join("")}</div>`).join("")}`}
 
@@ -177,6 +204,45 @@ function viewUren(M){const {all}=M;const months={};all.forEach(x=>{if(!x.datum)r
    <div class="sh"><h2>Per maand</h2><span>uren</span></div>
    ${Object.keys(months).length?`<div class="cards">${Object.keys(months).sort().reverse().map(k=>`<div class="mrow" style="display:block"><div style="display:flex;justify-content:space-between"><span>${cap(MAANDL[+k.slice(5,7)-1])} ${k.slice(0,4)} <span class="note">· ${months[k].n} ${months[k].n===1?"shoot":"shoots"}</span></span><b>${Math.round(months[k].u*10)/10} u</b></div><div class="bar"><span style="width:${months[k].u/mx*100}%"></span></div></div>`).join("")}</div><p class="note">Volgens de geplande start- en einduren. Shoots zonder uur tellen nog niet mee.</p>`:`<div class="empty">Nog geen uren.</div>`}`}
 
+function viewAvail(M){const busy=DATA.busy||[],blocks=DATA.blocks||[];
+  if(!avM){const n=now();avM=[n.getFullYear(),n.getMonth()]}
+  const [y,m]=avM;const first=new Date(y,m,1);const off=(first.getDay()+6)%7;const start=new Date(y,m,1-off);const weeks=Math.ceil((off+new Date(y,m+1,0).getDate())/7);const td=iso(now());
+  const inBlk=ds=>blocks.some(k=>ds>=k.van&&ds<=k.tot);
+  let cells="";for(let i=0;i<weeks*7;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=iso(d);const ev=busy.filter(x=>x.datum===ds);const past=ds<td;
+    const cls=inBlk(ds)?" blk":ev.length?(ev.some(x=>x.zeker)?" has":" has maybe"):"";
+    cells+=`<button class="day${d.getMonth()!==m?" out":""}${ds===td?" today":""}${cls}" data-av="${ds}" ${past?"disabled":""} aria-pressed="${avSel===ds}" aria-label="${d.getDate()} ${MAANDL[d.getMonth()]}${ev.length?", bezet":inBlk(ds)?", niet beschikbaar":", vrij"}">${d.getDate()}${ev.length>1?"<i></i>":""}</button>`}
+  let panel="";
+  if(avSel){const ev=busy.filter(x=>x.datum===avSel);const bl=inBlk(avSel);
+    panel=`<div class="sh"><h2>${cap(pd(avSel).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"}))}</h2></div>
+     ${bl?`<div class="slot"><span>Hatice is niet beschikbaar (verlof)</span></div>`:""}
+     ${ev.map(x=>`<div class="slot"><span>${x.zeker?"Bezet":"Voorlopig bezet"}</span><b>${x.start?esc(x.start)+(x.eind?" – "+esc(x.eind):""):"hele dag / uur nog niet bekend"}</b></div>`).join("")}
+     ${!ev.length&&!bl?`<div class="freebox">Hatice is vrij op deze dag</div>`:""}
+     <button class="btn" style="width:100%" data-newreq="${avSel}">Boeking aanvragen op deze dag</button>`}
+  const mineReq=(DATA.requests||[]).filter(r=>r.bron===M.me.id);
+  const st=r=>r.status==="Geboekt"?`<span class="tag ok">✓ Geboekt</span>`:r.status==="Verloren"?`<span class="tag bad">Niet doorgegaan</span>`:r.status==="Nieuw"?`<span class="tag warn">Verstuurd</span>`:`<span class="tag warn">In behandeling</span>`;
+  return `<div class="calhdr"><h2>${cap(MAANDL[m])} ${y}</h2><div class="nav"><button data-avcal="-1" aria-label="Vorige maand">‹</button><button data-avcal="1" aria-label="Volgende maand">›</button></div></div>
+   <p class="note" style="margin:-4px 2px 10px">De agenda van Hatice. Tik op een dag om te zien of ze vrij is.</p>
+   <div class="cal"><div class="wd">${["ma","di","wo","do","vr","za","zo"].map(d=>`<span>${d}</span>`).join("")}</div><div class="grid">${cells}</div></div>
+   <div class="legend"><span><i style="background:var(--brown)"></i>Bezet</span><span><i style="background:var(--warn-bg);border:1px solid var(--warn)"></i>Voorlopig bezet</span><span><i style="background:var(--sand)"></i>Niet beschikbaar</span><span><i style="border:1px solid var(--line)"></i>Vrij</span></div>
+   ${panel}
+   <div class="sh"><h2>Jouw aanvragen</h2><span>${mineReq.length}</span></div>
+   ${mineReq.length?`<div class="cards">${mineReq.map(r=>`<div class="card" style="cursor:default;grid-template-columns:48px minmax(0,1fr)"><div class="date">${r.datum?`<b>${pd(r.datum).getDate()}</b><span>${MAAND[pd(r.datum).getMonth()]}</span>`:"?"}</div><div style="min-width:0"><div class="c-t">${esc(r.klant)}${r.event?` <span style="font-weight:400;color:var(--muted)">· ${esc(r.event)}</span>`:""}</div><div class="c-x">${st(r)}</div></div></div>`).join("")}</div>`:`<div class="empty">Nog geen aanvragen verstuurd.</div>`}`}
+function requestForm(ds){const M=mine();const sc=document.createElement("div");sc.className="scrim";
+  const busy=(DATA.busy||[]).filter(x=>x.datum===ds);
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Boeking aanvragen"><div class="grab"></div><div class="eyebrow">Boeking aanvragen</div><h2>${cap(pd(ds).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"}))}</h2>
+   ${busy.length?`<div class="warnbox">Hatice heeft die dag al iets: ${busy.map(x=>x.start?x.start+(x.eind?"–"+x.eind:""):"uur onbekend").join(", ")}. Kies een uur dat niet overlapt.</div>`:""}
+   <form class="form" id="reqform"><div class="full"><label for="q-klant">Klant / koppel *</label><input id="q-klant" required maxlength="120"></div>
+    <div class="full"><label for="q-event">Event (söz, nişan, kına, düğün…)</label><input id="q-event" maxlength="120"></div>
+    <div><label for="q-start">Van</label><input id="q-start" type="time"></div><div><label for="q-eind">Tot</label><input id="q-eind" type="time"></div>
+    <div class="full"><label for="q-loc">Locatie</label><input id="q-loc" maxlength="200"></div>
+    <div class="full"><label for="q-contact">Contact klant (tel / Instagram)</label><input id="q-contact" maxlength="120"></div>
+    <div class="full"><label for="q-not">Extra info voor Hatice</label><textarea id="q-not" maxlength="600" placeholder="bv. ze willen video en foto, budget, aantal uur…"></textarea></div>
+    <div class="full acts" style="margin-top:4px"><button class="btn" type="submit">Verstuur naar Hatice</button><button class="btn ghost" type="button" data-close>Annuleer</button></div></form></div>`;
+  document.body.appendChild(sc);
+  sc.addEventListener("click",e=>{if(e.target===sc||e.target.closest("[data-close]"))sc.remove()});
+  sc.querySelector("#reqform").addEventListener("submit",async e=>{e.preventDefault();const b=sc.querySelector("[type=submit]");b.disabled=true;b.textContent="Versturen…";const v=id=>sc.querySelector(id).value.trim();
+    const {data:r}=await SB.rpc("team_booking_request",{p_code:code,p_by:M.me.id,p_datum:ds,p_start:v("#q-start"),p_eind:v("#q-eind"),p_klant:v("#q-klant"),p_event:v("#q-event"),p_locatie:v("#q-loc"),p_contact:v("#q-contact"),p_notitie:v("#q-not")});
+    sc.remove();toast(r&&r.ok?"Verstuurd! Hatice ziet je aanvraag nu.":"Lukt niet: "+((r&&r.error)||"geen verbinding"));load()})}
 function viewPast(M){const {me,past}=M;return `<div class="sh" style="margin-top:4px"><h2>Voorbije shoots</h2><span>${past.length}</span></div>${past.length?`<div class="cards">${past.map(x=>card(x,me)).join("")}</div>`:`<div class="empty">Nog geen voorbije shoots.</div>`}`}
 
 function render(){const A=$("#app"),T=$("#tabs");
@@ -186,9 +252,9 @@ function render(){const A=$("#app"),T=$("#tabs");
   const M=mine();
   if(!M){T.hidden=true;const TM=DATA.team||[];A.innerHTML=`<div class="hdr"><span class="logo">PRIMEMOMENTS<i></i></span><span class="eyebrow">Team</span></div><h1 style="font-size:28px">Wie ben jij?</h1><p class="note">Tik op je naam. Je gsm onthoudt dat.</p><div class="names">${TM.map(m=>{const n=(DATA.shifts||[]).filter(s=>(s.team||[]).includes(m.id)&&(daysTo(s.datum)===null||daysTo(s.datum)>=0)).length;return `<button class="name" data-who="${esc(m.id)}"><span class="av">${initials(m)}</span><span><b>${esc(m.naam)}</b><span>${esc(m.rol||"")} · ${n} ${n===1?"shoot":"shoots"} gepland</span></span></button>`}).join("")}</div>`;return}
   const {me}=M;
-  T.hidden=false;T.innerHTML=[["plan","Planning"],["kal","Kalender"],["uren","Uren"],["voorbij","Voorbij"]].map(([k,l])=>`<button class="tab" data-tab="${k}" ${tab===k?'aria-current="page"':""}>${ico(k)}<span>${l}</span></button>`).join("");
+  T.hidden=false;const nreq=forMe(M).length;const isFoto=/fotograaf/i.test(me.rol||"");T.innerHTML=[["plan","Planning"+(nreq?` (${nreq})`:"")],["kal","Kalender"],...(isFoto?[["beschik","Hatice"]]:[]),["uren","Uren"],["voorbij","Voorbij"]].map(([k,l])=>`<button class="tab" data-tab="${k}" ${tab===k?'aria-current="page"':""}>${ico(k)}<span>${l}</span></button>`).join("");
   const head=`<div class="hdr"><button class="me" data-switch aria-label="Andere persoon kiezen"><span class="av">${initials(me)}</span><span><b>Hoi ${esc((me.naam||"").split(" ")[0])}</b><span>${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</span></span></button><span class="logo">PRIMEMOMENTS<i></i></span></div>`;
-  A.innerHTML=head+(tab==="kal"?viewCal(M):tab==="uren"?viewUren(M):tab==="voorbij"?viewPast(M):viewPlan(M))}
+  A.innerHTML=head+(tab==="beschik"?viewAvail(M):tab==="kal"?viewCal(M):tab==="uren"?viewUren(M):tab==="voorbij"?viewPast(M):viewPlan(M))}
 
 function detail(id){const x=(DATA.shifts||[]).find(s=>s.id===id);if(!x)return;const M=mine();const TM=DATA.team||[];const d=pd(x.datum);
   const crew=(x.team||[]).map(i=>TM.find(m=>m.id===i)).filter(Boolean).map(m=>m.naam.split(" ")[0]+(m.rol?" ("+m.rol.toLowerCase()+")":"")).join(", ");
@@ -203,14 +269,35 @@ function detail(id){const x=(DATA.shifts||[]).find(s=>s.id===id);if(!x)return;co
    ${x.portfolio==="Nee"?`<div class="warnbox">De klant wil niet dat beelden gedeeld worden. Niets posten.</div>`:""}
    <div class="facts">${f("Uur",x.start?esc(x.start)+(x.eind?" – "+esc(x.eind):""):"Volgt nog")}${f("Duur",hours(x)?hours(x)+" uur":"–")}${f("Locatie",esc(x.locatie||"Volgt nog"),1)}${f("Team",esc(crew),1)}${f("Koppel / namen",esc(x.namen||""),1)}${f("Fotograaf",esc(x.fotograaf||""),1)}${f("Contact klant",esc(x.contact||""),1)}</div>
    ${x.notitie?`<div class="plan"><div class="k">Info van Hatice</div>${esc(x.notitie)}</div>`:""}
+   ${M&&(x.team||[]).includes(M.me.id)&&!(daysTo(x.datum)!==null&&daysTo(x.datum)<0)?handoverHtml(x,M):""}
    <div class="acts">${maps?`<a class="btn" href="${maps}" target="_blank" rel="noopener">Route</a>`:""}${tel?`<a class="btn ghost" href="tel:${tel[0].replace(/\s/g,"")}">Bel klant</a>`:""}<button class="btn ghost wide" data-close>Sluit</button></div></div>`;
-  document.body.appendChild(sc);sc.addEventListener("click",e=>{if(e.target===sc||e.target.closest("[data-close]"))sc.remove()})}
+  document.body.appendChild(sc);let pick=null;
+  sc.addEventListener("click",async e=>{if(e.target===sc||e.target.closest("[data-close]"))return sc.remove();
+    if(e.target.closest("[data-hand]")){sc.querySelector(".handform").hidden=false;e.target.closest("[data-hand]").hidden=true;return}
+    const ch=e.target.closest("[data-to]");if(ch){pick=ch.dataset.to;sc.querySelectorAll("[data-to]").forEach(c=>c.setAttribute("aria-pressed",c===ch));sc.querySelector("[data-send]").disabled=false;return}
+    if(e.target.closest("[data-send]")){const btn=e.target.closest("[data-send]");btn.disabled=true;btn.textContent="Versturen…";
+      const {data:r}=await SB.rpc("team_swap_request",{p_code:code,p_booking:x.id,p_from:M.me.id,p_to:pick==="all"?null:pick,p_reason:sc.querySelector("#reden").value.trim()});
+      sc.remove();toast(r&&r.ok?(pick==="all"?"Verstuurd naar het hele team":"Verstuurd naar "+nameOf(pick)):"Lukt niet: "+((r&&r.error)||"geen verbinding"));load();return}
+    const cw=e.target.closest("[data-cancel]");if(cw){await SB.rpc("team_swap_cancel",{p_code:code,p_swap:cw.dataset.cancel,p_by:M.me.id});sc.remove();toast("Verzoek ingetrokken");load()}})}
+function handoverHtml(x,M){const ow=openFrom(x,M.me);
+  if(ow)return `<div class="handbox"><div class="info">Je vroeg ${ow.to?esc(nameOf(ow.to)):"het hele team"} om over te nemen. Je blijft ingepland tot iemand ja zegt.</div><button class="btn ghost" style="width:100%" data-cancel="${esc(ow.id)}">Verzoek intrekken</button></div>`;
+  const cand=(DATA.team||[]).filter(m=>m.id!==M.me.id&&!(x.team||[]).includes(m.id));
+  return `<div class="handbox"><button class="btn ghost" style="width:100%" data-hand>Ik kan niet – geef door</button>
+   <div class="handform" hidden><div class="eyebrow">Wie vraag je?</div><div class="chips">${cand.map(m=>`<button class="chip" data-to="${esc(m.id)}" aria-pressed="false">${esc(m.naam.split(" ")[0])}</button>`).join("")}<button class="chip" data-to="all" aria-pressed="false">Wie kan er?</button></div>
+   <label class="eyebrow" for="reden">Reden (optioneel)</label><textarea id="reden" maxlength="300" placeholder="bv. ik heb examen"></textarea>
+   <button class="btn" style="width:100%;margin-top:10px" data-send disabled>Verstuur verzoek</button><p class="note">Je blijft ingepland tot iemand het overneemt. Hatice ziet het ook.</p></div></div>`}
+function toast(t){const e=document.createElement("div");e.textContent=t;e.setAttribute("role","status");e.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:13px;z-index:60;max-width:90vw;text-align:center";document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 
 document.addEventListener("click",e=>{
   const sh=e.target.closest("[data-shift]");if(sh&&!e.target.closest(".sheet"))return detail(sh.dataset.shift);
+  const ac=e.target.closest("[data-acc]");if(ac){const M=mine();ac.disabled=true;SB.rpc("team_swap_answer",{p_code:code,p_swap:ac.dataset.acc,p_by:M.me.id,p_accept:true}).then(({data:r})=>{toast(r&&r.ok?"Top, de shoot staat nu bij jou":"Lukt niet meer: iemand anders was sneller of het verzoek is ingetrokken");load()});return}
+  const de=e.target.closest("[data-dec]");if(de){const M=mine();de.disabled=true;SB.rpc("team_swap_answer",{p_code:code,p_swap:de.dataset.dec,p_by:M.me.id,p_accept:false}).then(()=>{toast("Doorgegeven dat je niet kan");load()});return}
   const w=e.target.closest("[data-who]");if(w){who=w.dataset.who;ls.set("pm-team-who",who);tab="plan";render();scrollTo(0,0);return}
   const t=e.target.closest("[data-tab]");if(t){tab=t.dataset.tab;calSel=null;render();scrollTo(0,0);return}
   const c=e.target.closest("[data-cal]");if(c){let [y,m]=calM;m+=+c.dataset.cal;if(m<0){m=11;y--}if(m>11){m=0;y++}calM=[y,m];calSel=null;return render()}
+  const av=e.target.closest("[data-av]");if(av){avSel=avSel===av.dataset.av?null:av.dataset.av;return render()}
+  const ac2=e.target.closest("[data-avcal]");if(ac2){let [y,m]=avM;m+=+ac2.dataset.avcal;if(m<0){m=11;y--}if(m>11){m=0;y++}avM=[y,m];avSel=null;return render()}
+  const nr=e.target.closest("[data-newreq]");if(nr)return requestForm(nr.dataset.newreq);
   const dd=e.target.closest("[data-day]");if(dd){calSel=calSel===dd.dataset.day?null:dd.dataset.day;return render()}
   if(e.target.closest("[data-switch]")){who=null;ls.set("pm-team-who",null);render()}});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&code)load()});

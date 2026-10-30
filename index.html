@@ -168,6 +168,9 @@ section.block>h2 .meta{font-family:var(--body);font-size:13px;font-weight:500;co
 .e-Gereserveerd{background:var(--warn-bg);color:var(--warn)} .d-Gereserveerd{background:var(--warn)}
 .e-Afgerond{background:var(--done-bg);color:var(--done)} .d-Afgerond{background:var(--done)}
 .e-Geannuleerd{background:var(--bad-bg);color:var(--bad);text-decoration:line-through} .d-Geannuleerd{background:var(--bad)}
+.e-req{background:var(--info-bg);color:var(--info);border:1px dashed var(--info)} .d-req{background:var(--info)}
+.newbox{background:var(--surface);border:2px solid var(--info);border-radius:var(--r);padding:4px 0;margin-bottom:22px;box-shadow:var(--shadow)}
+.newbox h2{font-size:17px;padding:10px 14px 4px;display:flex;justify-content:space-between}
 .e-blk{background:var(--surface);color:var(--muted);border:1px dashed var(--line)}
 @media (min-width:700px){.day{min-height:104px}.day .ev{display:block}.dots{display:none}}
 .cal-nav{display:flex;align-items:center;gap:6px}
@@ -282,7 +285,7 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 (function(){
 /* ================= constants ================= */
 const CO={naam:"Prime Moments",eig:"Hatice Kulak (eenmanszaak)",adres:"Pastoor Paquaylaan 164",plaats:"3550 Heusden, België",ond:"BE 1039.371.331",mail:"contact.primemoments@gmail.com",tel:"+32 468 37 10 09",iban:"BE39 7390 3465 9919",bic:"KREDBEBB",web:"primemoments.live"};
-const COLS=["bookings","leads","tasks","partners","recurring","companies","invoices","purchases","inventory","blocks","team"];
+const COLS=["bookings","leads","tasks","partners","recurring","companies","invoices","purchases","inventory","blocks","team","swaps"];
 const TEAM_URL=new URL("team/",location.href.split("#")[0]).href;
 const S={settings:{drempel:{"2026":961.08,"2027":1922.16},usd:0.86}};COLS.forEach(c=>S[c]=[]);
 const ICON={
@@ -405,7 +408,7 @@ V.vandaag=()=>{
   const vervallen=S.invoices.filter(i=>invStatus(i)==="Vervallen");
   const nxDays=nx?daysTo(nx.datum):null;
   const imp=!S.bookings.length&&!S.invoices.length?`<div class="entry" style="margin-bottom:22px"><h2 style="font-size:20px">Je gegevens importeren</h2><p class="note">Je HQ is nog leeg. Kies het bestand <b>PrimeMoments_HQ_gegevens.json</b> dat je van Claude kreeg. Dat moet maar één keer.</p><input type="file" id="importfile" accept=".json,application/json" style="font-family:var(--body);font-size:14px;text-transform:none;letter-spacing:0"></div>`:"";
-  return imp+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
+  return imp+teamNews()+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
   ${nx?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
    <div><div class="lbl">Volgende shoot · ${new Date(pd(nx.datum)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?(nx.eind?nx.start+"–"+nx.eind:nx.start):"",nx.locatie||"",nx.fotograaf?"Fotograaf: "+nx.fotograaf:""].filter(Boolean).map(esc).join(" · ")||"Details aanvullen"}</div></div></button>`:""}
   <div class="tiles">
@@ -433,19 +436,22 @@ V.agenda=()=>{
     cells+=`<button class="day${d.getMonth()!==m?" out":""}${ds===td?" today":""}${bk?" blk":""}" data-day="${ds}" aria-pressed="${UI.calSel===ds}" aria-label="${d.getDate()} ${MAANDL[d.getMonth()]}, ${evs.length} boekingen">
      <span class="n">${d.getDate()}</span>
      ${bk?`<span class="ev e-blk">${esc(bk.titel)}</span><span class="blkbar"></span>`:""}
+     ${openLeads().filter(l=>l.datum===ds).map(l=>`<span class="ev e-req">Aanvraag: ${esc(l.naam)}</span>`).join("")}
      ${evs.slice(0,3).map(b=>`<span class="ev e-${esc(b.status)}">${b.start?esc(b.start)+" ":""}${esc(b.klant)}</span>`).join("")}${evs.length>3?`<span class="ev" style="color:var(--muted)">+${evs.length-3} meer</span>`:""}
-     <span class="dots">${evs.map(b=>`<i class="dot d-${esc(b.status)}"></i>`).join("")}</span></button>`}
+     <span class="dots">${evs.map(b=>`<i class="dot d-${esc(b.status)}"></i>`).join("")}${openLeads().filter(l=>l.datum===ds).map(()=>`<i class="dot d-req"></i>`).join("")}</span></button>`}
   const ym=`${y}-${String(m+1).padStart(2,"0")}`;
   const sel=UI.calSel;
   const list=sel?sorted(S.bookings.filter(b=>b.datum===sel),"start"):sorted(S.bookings.filter(b=>(b.datum||"").startsWith(ym)));
   const bks=S.blocks.filter(k=>sel?(sel>=k.van&&sel<=(k.tot||k.van)):((k.van||"")<=ym+"-31"&&(k.tot||k.van||"")>=ym+"-01"));
   const total=S.bookings.filter(b=>(b.datum||"").startsWith(ym)).reduce((a,b)=>a+vid(b),0);
+  const reqList=openLeads().filter(l=>sel?l.datum===sel:(l.datum||"").startsWith(ym));
   return `<div class="ph"><div><div class="eyebrow">Planning</div><h1>${cap(MAANDL[m])} ${y}</h1></div>
    <div class="acts cal-nav"><button class="btn ghost" data-cal="-1" aria-label="Vorige maand">‹</button><button class="btn ghost" data-cal="0">Vandaag</button><button class="btn ghost" data-cal="1" aria-label="Volgende maand">›</button><button class="btn" data-newb="${sel||""}">+ Boeking</button></div></div>
   <div class="cal"><div class="cal-head">${DAG.map(d=>`<span>${d}</span>`).join("")}</div><div class="cal-grid">${cells}</div></div>
-  <div class="legend"><span><i style="background:var(--ok)"></i>Bevestigd</span><span><i style="background:var(--warn)"></i>Gereserveerd</span><span><i style="background:var(--done)"></i>Afgerond</span><span><i style="background:var(--bad)"></i>Geannuleerd</span><span><i style="background:var(--sand);border:1px solid var(--line)"></i>Niet beschikbaar</span></div>
+  <div class="legend"><span><i style="background:var(--ok)"></i>Bevestigd</span><span><i style="background:var(--warn)"></i>Gereserveerd</span><span><i style="background:var(--done)"></i>Afgerond</span><span><i style="background:var(--bad)"></i>Geannuleerd</span><span><i style="background:var(--sand);border:1px solid var(--line)"></i>Niet beschikbaar</span><span><i style="background:var(--info)"></i>Aanvraag</span></div>
   <section class="block" style="margin-top:22px"><h2>${sel?cap(new Date(pd(sel)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})):"Deze maand"} <span class="meta">${sel?`<a href="#agenda" data-clearsel>toon hele maand</a>`:`${list.filter(b=>b.status!=="Geannuleerd").length} boekingen · ${eur(total)}`}</span></h2>
    ${bks.map(k=>`<div class="list" style="margin-bottom:10px"><button class="row two" data-edit="blocks:${k.id}"><div class="main-t"><div class="t">${esc(k.titel)}</div><div class="d">${dl_(k.van)} – ${dl_(k.tot||k.van)}${k.notitie?" · "+esc(k.notitie):""}</div></div><div class="amt">${pill("Niet beschikbaar","p-neutral")}</div></button></div>`).join("")}
+   ${reqList.length?`<div class="list" style="margin-bottom:10px">${reqList.map(l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">Aanvraag: ${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[dl_(l.datum),l.start?l.start+(l.eind?"–"+l.eind:""):"",l.teamAanvraag?"van "+tName(l.bron):l.kanaal].filter(Boolean).map(esc).join(" · ")}</div></div><div class="amt">${pill(l.status||"Nieuw")}</div></button>`).join("")}</div>`:""}
    ${list.length?`<div class="list">${list.map(b=>rowB(b)).join("")}</div>`:`<div class="empty">${sel?`Niets gepland. <button class="btn sm" data-newb="${sel}" style="margin-left:6px">+ Boeking op deze dag</button>`:"Niets gepland deze maand."}</div>`}
    <div style="margin-top:12px"><button class="btn ghost sm" data-new="blocks">Dagen blokkeren</button></div></section>`};
 
@@ -471,7 +477,7 @@ V.boekingen=()=>{
 const LSTAT=["Nieuw","Offerte gestuurd","Wacht op antwoord","Geboekt","Verloren"];
 V.aanvragen=()=>{
   const act=LSTAT.slice(0,3);const L=st=>S.leads.filter(l=>(l.status||"Nieuw")===st).sort((a,b)=>(b.ontvangen||"").localeCompare(a.ontvangen||""));
-  const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.kanaal||"",l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
+  const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.teamAanvraag?"van "+tName(l.bron):(l.kanaal||""),l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
   const geboekt=L("Geboekt"),verloren=L("Verloren");
   const conv=geboekt.length+verloren.length?Math.round(geboekt.length/(geboekt.length+verloren.length)*100):0;
   return `<div class="ph"><div><div class="eyebrow">Pipeline</div><h1>Aanvragen</h1></div><div class="acts"><button class="btn" data-new="leads">+ Aanvraag</button></div></div>
@@ -608,6 +614,15 @@ V.kennisbank=()=>`<div class="ph"><div><div class="eyebrow">Alles op één plek<
 </div>`;
 
 /* ================= team ================= */
+const tName=id=>((S.team.find(m=>m.id===id)||{}).naam||"iemand").split(" ")[0];
+const openLeads=()=>S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status||"Nieuw"));
+function teamNews(){const reqs=S.leads.filter(l=>l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw").sort((a,b)=>(b.created||"").localeCompare(a.created||""));
+  const sw=S.swaps.filter(w=>w.status==="open"||((w.status==="aanvaard"||w.status==="geweigerd")&&(w.answered||"")>=addDays(iso(now()),-7))).sort((a,b)=>(b.created||"").localeCompare(a.created||""));
+  if(!reqs.length&&!sw.length)return "";
+  const bk=id=>S.bookings.find(b=>b.id===id)||{};
+  return `<div class="newbox"><h2><span>Nieuw van je team</span><span class="meta" style="font-family:var(--body);font-size:12px;color:var(--muted)">${reqs.length+sw.length}</span></h2>
+   ${reqs.map(l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">Boekingsaanvraag van ${esc(tName(l.bron))}: ${esc(l.naam)}</div><div class="d">${[l.event,l.datum?dl_(l.datum):"",l.start?l.start+(l.eind?"–"+l.eind:""):"",l.locatie].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${pill("Boekingsaanvraag","p-info")}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")?pill("Je hebt die dag al iets","p-bad"):""}</div></div><div class="amt"><small>openen</small></div></button>`).join("")}
+   ${sw.map(w=>{const b=bk(w.booking);return `<button class="row two" data-edit="bookings:${esc(w.booking)}"><div class="main-t"><div class="t">${w.status==="open"?`${esc(tName(w.from))} kan niet: ${esc(b.klant||"")}`:w.status==="aanvaard"?`${esc(tName(w.by))} neemt ${esc(b.klant||"")} over van ${esc(tName(w.from))}`:`${esc(tName(w.by))} kan ${esc(b.klant||"")} niet overnemen`}</div><div class="d">${[b.datum?dl_(b.datum):"",w.status==="open"?(w.to?"gevraagd aan "+tName(w.to):"gevraagd aan het hele team"):"",w.reden?"“"+w.reden+"”":""].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${pill(w.status==="open"?"Wacht op antwoord":w.status==="aanvaard"?"Overgenomen":"Geweigerd",w.status==="aanvaard"?"p-ok":w.status==="open"?"p-warn":"p-bad")}</div></div><div class="amt"><small>boeking</small></div></button>`}).join("")}</div>`}
 const teamChips=b=>(b.team||[]).map(id=>S.team.find(m=>m.id===id)).filter(Boolean).map(m=>pill(m.code||m.naam,"p-team")).join("");
 function hours(x){if(!x.start||!x.eind)return 0;const p=t=>{const [h,m]=t.split(":").map(Number);return h*60+(m||0)};let d=p(x.eind)-p(x.start);if(d<=0)d+=1440;return Math.round(d/6)/10}
 function genKey(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";const r=new Uint8Array(12);crypto.getRandomValues(r);const c=[...r].map(x=>A[x%A.length]).join("");return c.slice(0,4)+"-"+c.slice(4,8)+"-"+c.slice(8)}
@@ -683,7 +698,7 @@ const FORMS={
   ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["foto","Foto (€, telt niet mee)","number"],["betaling","Betaalstatus","select",0,["Open","Voorschot","Betaald","Te checken"]],["ontvangen","Al ontvangen (€)","number"],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
   ["_","Contact & team","sec"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["levering","Levering","select",0,["Nog te filmen","In montage","Afgeleverd"]],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["notitie","Notities (alleen voor jou)","textarea",1]]},
  team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Helper","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
- leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via"]],["event","Event","text"],["datum","Gevraagde datum","date"],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
+ leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via","Team"]],["event","Event","text"],["datum","Gevraagde datum","date"],["start","Van","time"],["eind","Tot","time"],["locatie","Locatie","text",1],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
  tasks:{t:"Taak",f:[["titel","Taak","text",1],["deadline","Tegen","date"],["klaar","Klaar","check"],["notitie","Notitie","textarea",1]]},
  partners:{t:"Partner",f:[["naam","Naam","text",1],["rol","Rol","select",0,["Fotograaf","Dronepiloot","Second shooter","Locatie","Partner"]],["type","Samenwerking","text"],["contact","Contact","text",1],["notitie","Notities","textarea",1]]},
  recurring:{t:"Vaste klant",f:[["naam","Naam","text",1],["bedrag","Bedrag per maand (€)","number"],["status","Status","select",0,["Actief","In afwachting","Gestopt"]],["sinds","Sinds","date"],["notitie","Afspraken","textarea",1]]},
@@ -715,7 +730,7 @@ function openForm(col,id,preset){
   if(col==="invoices"&&!id){const d=form.elements.datum,v=form.elements.vervaldatum;d.addEventListener("change",()=>{v.value=addDays(d.value,7)})}
   sc.addEventListener("click",e=>{
     const del=e.target.closest("[data-del]");if(del){if(!armed){armed=true;del.textContent="Zeker? Tik opnieuw";return}remove(col,id).then(close)}
-    if(e.target.closest("[data-tobook]")){close();openForm("bookings",null,{klant:it.naam,event:it.event,datum:it.datum,video:it.prijs,status:"Gereserveerd",betaling:"Open",levering:"Nog te filmen",contact:it.contact,kanaal:it.kanaal,notitie:it.notitie,categorie:"Love Stories",_lead:id})}
+    if(e.target.closest("[data-tobook]")){close();openForm("bookings",null,{klant:it.naam,event:it.event,datum:it.datum,start:it.start,eind:it.eind,locatie:it.locatie,video:it.prijs,team:it.teamAanvraag&&it.bron?[it.bron]:[],fotograaf:it.teamAanvraag?tName(it.bron):"",status:"Gereserveerd",betaling:"Open",levering:"Nog te filmen",contact:it.contact,kanaal:it.kanaal,notitie:it.notitie,categorie:"Love Stories",_lead:id})}
     if(e.target.closest("[data-toinv]")){close();invFromBooking(it)}});
   form.addEventListener("submit",async e=>{e.preventDefault();const o={};F.f.forEach(([k,,t])=>{if(t==="sec")return;if(t==="team"){o[k]=[...form.querySelectorAll('input[name="team"]:checked')].map(x=>x.value);return}const el=form.elements[k];o[k]=t==="check"?el.checked:t==="number"?(el.value===""?null:+el.value):el.value.trim()});
     const first=F.f.find(x=>x[2]!=="sec"&&x[2]!=="select")[0];if(!o[first]){form.elements[first].focus();toast("Vul eerst "+F.f.find(x=>x[0]===first)[1].toLowerCase()+" in");return}
