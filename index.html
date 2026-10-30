@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5A3E2C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM HQ">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/hq-192.png">
+<link rel="apple-touch-icon" href="icons/hq-180.png">
+<title>Prime Moments HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Poppins:wght@400;500;600&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{margin:0}body{font-size:14px}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: app shell. Desktop = grouped sidebar + content column; phone = bottom tab bar + floating "+" */
+:root{
+  --bg:#F6F1EB; --surface:#FFFFFF; --sand:#E8DFD6; --sand2:#F1EAE2; --line:#E4DACF;
+  --fg:#0F0F0F; --muted:#7A6C5F; --accent:#6B4A35; --accent-ink:#FFFFFF; --brown:#5A3E2C;
+  --ok:#2F6B4F; --ok-bg:#E2EFE6; --warn:#9C560C; --warn-bg:#F8E8D2; --bad:#A33A2E; --bad-bg:#F6E0DC; --info:#2D5B86; --info-bg:#E1EAF3; --done:#6E6A66; --done-bg:#ECE8E4;
+  --display:"Lora",Georgia,"Times New Roman",serif; --body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px; --shadow:0 1px 2px rgba(60,40,25,.05),0 4px 14px rgba(60,40,25,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F0E0D; --surface:#1A1714; --sand:#2B2520; --sand2:#221E1A; --line:#342D27;
+  --fg:#EFE8E0; --muted:#A99A8B; --accent:#D0A984; --accent-ink:#141110; --brown:#5A3E2C;
+  --ok:#8FCBAA; --ok-bg:#1C2D24; --warn:#F0B36B; --warn-bg:#33261A; --bad:#EE9A8E; --bad-bg:#3A201C; --info:#9CC2E8; --info-bg:#1B2633; --done:#ADA69F; --done-bg:#26221F; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F0E0D; --surface:#1A1714; --sand:#2B2520; --sand2:#221E1A; --line:#342D27;
+  --fg:#EFE8E0; --muted:#A99A8B; --accent:#D0A984; --accent-ink:#141110; --brown:#5A3E2C;
+  --ok:#8FCBAA; --ok-bg:#1C2D24; --warn:#F0B36B; --warn-bg:#33261A; --bad:#EE9A8E; --bad-bg:#3A201C; --info:#9CC2E8; --info-bg:#1B2633; --done:#ADA69F; --done-bg:#26221F; --shadow:none; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.app{display:grid;grid-template-columns:1fr;min-height:100%}
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 120px;max-width:1040px;width:100%;margin:0 auto;min-width:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- navigation ---- */
+nav.side{position:fixed;inset:auto 0 0 0;z-index:20;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+nav.side .brand,nav.side .grp,nav.side .newbtn,nav.side .d-only{display:none}
+.nav-a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:10.5px;padding:6px 6px;border-radius:10px;min-width:56px}
+.nav-a svg{width:22px;height:22px;flex:none}
+.nav-a[aria-current="page"]{color:var(--accent);font-weight:600}
+.nav-a .cnt{display:none}
+@media (min-width:960px){
+  .app{grid-template-columns:244px 1fr}
+  nav.side{position:sticky;top:0;inset:auto;height:100vh;align-self:start;overflow:auto;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:1px;border-top:0;border-right:1px solid var(--line);padding:22px 14px 18px}
+  nav.side .brand{display:block;margin:0 8px 18px}
+  nav.side .grp{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 12px 4px}
+  nav.side .newbtn{display:flex;margin:0 4px 6px}
+  nav.side .d-only{display:flex}
+  .nav-a{flex-direction:row;gap:12px;font-size:14px;padding:8px 12px;min-width:0}
+  .nav-a svg{width:18px;height:18px}
+  .nav-a[aria-current="page"]{background:var(--sand);color:var(--fg)}
+  .nav-a .cnt{display:inline-block;margin-left:auto;font-size:11px;background:var(--bad-bg);color:var(--bad);border-radius:999px;padding:0 7px;font-weight:600}
+  .nav-a .cnt:empty{display:none}
+  .nav-a.m-only{display:none}
+  main{padding-block:30px 60px}
+  .fab{display:none}
+}
+.logo{background:var(--brown);color:#fff;border-radius:10px;padding:10px 12px;font-weight:600;letter-spacing:.12em;font-size:12px;display:inline-flex;align-items:center;gap:1px}
+.logo i{display:inline-block;width:0;height:0;border-left:6px solid #fff;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-left:3px}
+.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-top:8px}
+.fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(82px + env(safe-area-inset-bottom,0px));z-index:25;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-size:28px;line-height:1;box-shadow:0 8px 22px rgba(0,0,0,.2);cursor:pointer}
+
+/* ---- page chrome ---- */
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.ph h1{font-size:30px;line-height:1.15}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ph .acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:999px;padding:9px 16px;background:var(--accent);color:var(--accent-ink);font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none}
+.btn.ghost{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--line)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:24px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0;box-shadow:var(--shadow)}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px;white-space:nowrap}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.dark{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tile.dark .k,.tile.dark .s{color:color-mix(in srgb,var(--bg) 68%,var(--fg))}
+.tile.warn .v{color:var(--warn)} .tile.bad .v{color:var(--bad)} .tile.good .v{color:var(--ok)}
+section.block{margin-bottom:28px}
+section.block>h2{font-size:19px;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+section.block>h2 .meta{font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.cols{display:grid;grid-template-columns:1fr;gap:0 24px}
+@media (min-width:860px){.cols{grid-template-columns:1.4fr 1fr}}
+.cols>*{min-width:0}
+
+/* ---- lists ---- */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border:0;border-top:1px solid var(--line);cursor:pointer;background:none;width:100%;text-align:left}
+.row.two{grid-template-columns:minmax(0,1fr) auto}
+.list>.row:first-child,.list>:first-child .row{border-top:0}
+.row:hover{background:var(--sand2)}
+.date{text-align:center;line-height:1.1;font-variant-numeric:tabular-nums}
+.date b{display:block;font-family:var(--display);font-size:20px}
+.date span{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.date.none b{font-size:16px;color:var(--muted)}
+.main-t{min-width:0}
+.main-t .t{font-weight:500;overflow-wrap:anywhere}
+.main-t .d{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.amt small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+.pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.pill{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.p-ok,.p-Bevestigd,.p-Betaald,.p-Geboekt,.p-Actief,.p-Loopt,.p-Afgeleverd{background:var(--ok-bg);color:var(--ok)}
+.p-warn,.p-Gereserveerd,.p-Voorschot,.p-Open,.p-In-afwachting,.p-Bijna-verlopen,.p-In-montage{background:var(--warn-bg);color:var(--warn)}
+.p-done,.p-Afgerond,.p-Verlopen,.p-Gestopt{background:var(--done-bg);color:var(--done)}
+.p-bad,.p-Geannuleerd,.p-Vervallen,.p-Verloren{background:var(--bad-bg);color:var(--bad)}
+.p-info,.p-Nieuw,.p-Offerte-gestuurd,.p-Wacht-op-antwoord,.p-Te-checken{background:var(--info-bg);color:var(--info)}
+.p-neutral{background:var(--sand);color:var(--fg)}
+.row.cancel .t{text-decoration:line-through;color:var(--muted)}
+.empty{padding:22px 16px;color:var(--muted);text-align:center;background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;margin-bottom:12px}
+.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .chips{margin:0}
+
+/* ---- hero next shoot ---- */
+.next{background:var(--brown);color:#F6EDE3;border-radius:18px;padding:18px 20px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-bottom:22px;cursor:pointer;border:0;width:100%;text-align:left}
+.next .big{font-family:var(--display);font-size:44px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;min-width:64px}
+.next .big small{display:block;font-family:var(--body);font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-top:4px;font-weight:500}
+.next .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.next .ttl{font-family:var(--display);font-size:20px;font-weight:600;line-height:1.25;margin:2px 0}
+.next .sub{font-size:13px;opacity:.85}
+
+/* ---- tasks ---- */
+.task{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;border-top:1px solid var(--line)}
+.task:first-child{border-top:0}
+.task input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);margin-top:1px;flex:none}
+.task .tt{flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.task .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
+.addline{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}
+.addline input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg)}
+
+/* ---- calendar ---- */
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;padding:8px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.day{min-height:62px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px;background:none;border-top:0;border-left:0;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:3px;min-width:0;position:relative}
+.day:nth-child(7n){border-right:0}
+.day.out{background:var(--sand2);color:var(--muted)}
+.day.blk{background:var(--sand)}
+.day.blk.out{background:color-mix(in srgb,var(--sand) 60%,var(--sand2))}
+.day .blkbar{display:block;height:4px;border-radius:2px;background:var(--muted);opacity:.55}
+@media (min-width:700px){.day .blkbar{display:none}}
+.day .n{font-size:12px;font-variant-numeric:tabular-nums;font-weight:500;width:22px;height:22px;display:grid;place-items:center;border-radius:50%}
+.day.today .n{background:var(--accent);color:var(--accent-ink)}
+.day[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--accent)}
+.day .ev{font-size:11px;line-height:1.25;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none}
+.dots{display:flex;gap:3px;flex-wrap:wrap}
+.dot{width:7px;height:7px;border-radius:50%}
+.e-Bevestigd{background:var(--ok-bg);color:var(--ok)} .d-Bevestigd{background:var(--ok)}
+.e-Gereserveerd{background:var(--warn-bg);color:var(--warn)} .d-Gereserveerd{background:var(--warn)}
+.e-Afgerond{background:var(--done-bg);color:var(--done)} .d-Afgerond{background:var(--done)}
+.e-Geannuleerd{background:var(--bad-bg);color:var(--bad);text-decoration:line-through} .d-Geannuleerd{background:var(--bad)}
+.e-blk{background:var(--surface);color:var(--muted);border:1px dashed var(--line)}
+@media (min-width:700px){.day{min-height:104px}.day .ev{display:block}.dots{display:none}}
+.cal-nav{display:flex;align-items:center;gap:6px}
+.cal-nav .btn{padding:7px 12px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* ---- chart ---- */
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 12px 10px;overflow-x:auto;box-shadow:var(--shadow)}
+.bars{display:grid;grid-template-columns:repeat(12,minmax(34px,1fr));gap:6px;align-items:end;height:190px;min-width:450px;border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;height:100%;cursor:pointer;background:none;border:0;padding:0}
+.bar .val{font-size:10.5px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums;margin-bottom:3px;white-space:nowrap}
+.bar .seg{border-radius:4px 4px 0 0;display:block}
+.bar .seg.c{background:var(--accent)}
+.bar .seg.r{background:color-mix(in srgb,var(--warn) 50%,var(--surface))}
+.bar .seg+.seg{border-radius:0}
+.bar[aria-pressed="true"] .val{color:var(--fg);font-weight:600}
+.bar[aria-pressed="true"] .seg.c{background:var(--fg)}
+.mlabels{display:grid;grid-template-columns:repeat(12,minmax(34px,1fr));gap:6px;min-width:450px;font-size:11px;color:var(--muted);text-align:center;padding-top:6px}
+.hbar{display:grid;grid-template-columns:minmax(90px,140px) 1fr auto;gap:10px;align-items:center;padding:7px 16px;font-size:13px}
+.hbar .tr{height:10px;background:var(--sand2);border-radius:5px;overflow:hidden}
+.hbar .tr span{display:block;height:100%;background:var(--accent);border-radius:5px}
+.hbar b{font-variant-numeric:tabular-nums;font-weight:500}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:14px 16px;font-variant-numeric:tabular-nums}
+.kv .tot{font-weight:600;border-top:1px solid var(--line);padding-top:8px}
+.kv .neg{color:var(--bad)} .kv .pos{color:var(--ok)}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px;max-width:70ch}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px;min-width:520px}
+.tbl th,.tbl td{padding:9px 12px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+.tbl th{border-top:0;font-weight:500;color:var(--muted);font-size:12px}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl tr.tot td{font-weight:600;background:var(--sand2)}
+
+/* ---- kennisbank ---- */
+.kb{display:grid;gap:10px}
+.kb details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 16px;box-shadow:var(--shadow)}
+.kb summary{cursor:pointer;padding:14px 0;font-family:var(--display);font-size:17px;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+.kb summary::-webkit-details-marker{display:none}
+.kb summary::after{content:"+";color:var(--muted);font-family:var(--body)}
+.kb details[open] summary::after{content:"–"}
+.kb .in{padding-bottom:16px;max-width:68ch}
+.kb table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.kb td,.kb th{text-align:left;padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+.kb th{font-weight:500;color:var(--muted);font-size:12px;border-top:0}
+.kb ul{padding-left:18px;margin:6px 0}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;display:flex;gap:8px;align-items:center}
+.sw i{width:20px;height:20px;border-radius:6px;border:1px solid var(--line)}
+.copy{background:var(--sand);border:0;border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer;margin-left:6px}
+.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.menu a,.menu button{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-decoration:none;color:var(--fg);display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;box-shadow:var(--shadow)}
+.menu svg{width:22px;height:22px;color:var(--accent)}
+.menu b{font-weight:500}
+.menu span{font-size:12px;color:var(--muted)}
+
+/* ---- sheets & forms ---- */
+.scrim{position:fixed;inset:0;background:rgba(15,12,10,.5);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:600px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+.sheet.wide{max-width:820px}
+@media (min-width:700px){.scrim{align-items:center;padding:20px}.sheet{border-radius:20px}}
+.sheet h3{font-size:22px;margin-bottom:14px}
+.sheet .sub{color:var(--muted);font-size:13px;margin:-10px 0 14px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.full,.fsec{grid-column:1/-1}
+.fsec{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.f label{font-size:12px;color:var(--muted)}
+.f input,.f select,.f textarea{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg);width:100%;min-width:0}
+.f textarea{min-height:84px;resize:vertical}
+.f.check{flex-direction:row;align-items:center;gap:8px}
+.f.check input{width:20px;height:20px;accent-color:var(--accent)}
+.f .hint{font-size:11.5px;color:var(--muted)}
+.sheet .actions{display:flex;gap:8px;justify-content:space-between;margin-top:18px;flex-wrap:wrap;position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--surface);padding-block:12px calc(4px + env(safe-area-inset-bottom,0px))}
+.sheet .actions>div{display:flex;gap:8px;flex-wrap:wrap}
+.newmenu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.newmenu button{border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.newmenu b{font-weight:500}.newmenu span{font-size:12px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13px;z-index:60;white-space:nowrap}
+@media (min-width:960px){.toast{bottom:28px}}
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+
+/* ---- invoice paper (always light, it's a printed document) ---- */
+.paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
+.paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
+
+.p-team{background:var(--fg);color:var(--bg)}
+.teamchecks{display:flex;flex-wrap:wrap;gap:8px}
+.teamchecks label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg);cursor:pointer;font-size:13px;color:var(--fg)}
+.teamchecks input{width:16px;height:16px;accent-color:var(--accent)}
+.codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:22px;letter-spacing:.12em;background:var(--sand2);border:1px dashed var(--line);border-radius:12px;padding:12px 16px;text-align:center;font-weight:600}
+.msgbox{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px}
+.crew-wrap{max-width:640px;margin:0 auto}
+.crew-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.prevbar{background:var(--info-bg);color:var(--info);border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.entry{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+.entry input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:.1em;text-transform:uppercase;margin:12px 0}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+@media (max-width:440px){.fgrid{grid-template-columns:1fr}.ph h1{font-size:26px}.row{grid-template-columns:44px minmax(0,1fr) auto;gap:10px}.tile .v{font-size:23px}.next .big{font-size:36px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <nav class="side" aria-label="Hoofdmenu" id="nav"></nav>
+  <main id="main"><div class="empty">Je headquarter laadt…</div></main>
+</div>
+<button class="fab" id="fab" aria-label="Nieuw toevoegen">+</button>
+
+<script>
+(function(){
+/* ================= constants ================= */
+const CO={naam:"Prime Moments",eig:"Hatice Kulak (eenmanszaak)",adres:"Pastoor Paquaylaan 164",plaats:"3550 Heusden, België",ond:"BE 1039.371.331",mail:"contact.primemoments@gmail.com",tel:"+32 468 37 10 09",iban:"BE39 7390 3465 9919",bic:"KREDBEBB",web:"primemoments.live"};
+const COLS=["bookings","leads","tasks","partners","recurring","companies","invoices","purchases","inventory","blocks","team"];
+const TEAM_URL=new URL("team/",location.href.split("#")[0]).href;
+const S={settings:{drempel:{"2026":961.08,"2027":1922.16},usd:0.86}};COLS.forEach(c=>S[c]=[]);
+const ICON={
+ vandaag:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ agenda:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+ boekingen:'<path d="M4 7h16v13H4zM9 7V4h6v3"/><path d="M8 12h8M8 16h5"/>',
+ aanvragen:'<path d="M4 5h16v11H8l-4 4z"/>',
+ klanten:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .8 3.2 2.6 3.5 5.2"/>',
+ facturen:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
+ aankopen:'<path d="M3 4h2l2.5 11h11L21 7H6.2"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',
+ inventaris:'<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/>',
+ geld:'<path d="M17 6.5A6.5 6.5 0 1 0 17 17.5M4 10h9M4 14h9"/>',
+ taken:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+ team:'<circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8M14 14.6c.8-.3 1.6-.4 2.5-.4 2.3 0 4.2 1.5 5 4.3"/>',
+ partners:'<path d="M8 12l-3 3a2.5 2.5 0 0 0 3.5 3.5l1.5-1.5M16 12l3-3a2.5 2.5 0 0 0-3.5-3.5L14 7M9 15l6-6"/>',
+ kennisbank:'<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v16H5.5A1.5 1.5 0 0 0 4 20.5zM4 20.5A1.5 1.5 0 0 0 5.5 22H20"/>',
+ meer:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
+};
+const ico=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
+const MOBILE=["vandaag","agenda","boekingen","geld","meer"];
+const MAAND=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+const MAANDL=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+const DAG=["ma","di","wo","do","vr","za","zo"];
+
+/* ================= helpers ================= */
+let db=null,dl=null,canWrite=false,ready=false;
+const UI={mode:"owner",preview:null,crewErr:"",view:"vandaag",bFilter:"komend",bSearch:"",year:null,month:null,cal:null,calSel:null,fFilter:"alle",aYear:null,lostOpen:false};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=(n,dec)=>"€ "+(+n||0).toLocaleString("nl-BE",{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0});
+const eur2=n=>eur(n,true);
+const now=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const pd=s=>{if(!s||!/^\d{4}-\d\d-\d\d/.test(s))return null;const [y,m,d]=s.slice(0,10).split("-").map(Number);return new Date(y,m-1,d)};
+const dl_=s=>{const d=pd(s);return d?`${d.getDate()} ${MAAND[d.getMonth()]} ${d.getFullYear()}`:"–"};
+const dShort=s=>{const d=pd(s);return d?`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`:"–"};
+const daysTo=s=>{const d=pd(s);return d?Math.round((d-now())/864e5):null};
+const addDays=(s,n)=>{const d=pd(s)||now();d.setDate(d.getDate()+n);return iso(d)};
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
+const cls=s=>"p-"+String(s||"").replace(/\s+/g,"-");
+const pill=(s,c)=>s?`<span class="pill ${c||cls(s)}">${esc(s)}</span>`:"";
+const vid=b=>b.status==="Geannuleerd"?0:(+b.video||0);
+const sorted=(L,k="datum")=>[...L].sort((a,b)=>(a[k]||"9999").localeCompare(b[k]||"9999"));
+function toast(t){document.querySelectorAll(".toast").forEach(e=>e.remove());const e=document.createElement("div");e.className="toast";e.setAttribute("role","status");e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2400)}
+
+/* ================= business logic ================= */
+const toReceive=b=>{if(b.status==="Geannuleerd"||b.status==="Gereserveerd"||b.betaling==="Betaald"||b.betaling==="Te checken")return 0;return Math.max(0,vid(b)-(+b.ontvangen||0))};
+function sameDay(b){if(!b.datum||b.status==="Geannuleerd")return [];return S.bookings.filter(o=>o.id!==b.id&&o.datum===b.datum&&o.status!=="Geannuleerd")}
+function flags(b){const f=[];if(b.status==="Geannuleerd")return f;const dt=daysTo(b.datum);
+  if(!b.datum)f.push("Datum ontbreekt");
+  if(dt!==null&&dt<0&&b.status!=="Afgerond")f.push("Datum voorbij");
+  if(dt!==null&&dt<0&&b.status==="Gereserveerd")f.splice(f.indexOf("Datum voorbij"),1,"Doorgegaan?");
+  if(!b.video&&!b.gratis&&b.status!=="Geannuleerd")f.push("Prijs ontbreekt");
+  if(b.betaling==="Te checken"&&dt!==null&&dt<0)f.push("Betaling nakijken");
+  if(dt!==null&&dt>=0&&sameDay(b).length)f.push("2 shoots die dag");
+  if(dt!==null&&dt>=0&&inBlock(b.datum))f.push("Valt in "+inBlock(b.datum).titel);
+  return f}
+function inBlock(ds){return S.blocks.find(k=>k.van&&ds>=k.van&&ds<=(k.tot||k.van))}
+const invTotal=i=>Math.max(0,(i.regels||[]).reduce((a,r)=>a+(+r.bedrag||0),0)-(+i.korting||0));
+function invStatus(i){if(i.status==="Betaald")return "Betaald";if(i.vervaldatum&&daysTo(i.vervaldatum)<0)return "Vervallen";return "Open"}
+function deductible(p,year){const z=(p.zakelijk??100)/100;const amt=(+p.bedrag||0)*z;const y0=+(p.datum||"").slice(0,4);if(!y0)return 0;
+  if(p.soort==="Investering"){const n=+p.jaren||3;return year>=y0&&year<y0+n?amt/n:0}return year===y0?amt:0}
+function restwaarde(p,year){if(p.soort!=="Investering")return 0;const z=(p.zakelijk??100)/100;const amt=(+p.bedrag||0)*z;const y0=+(p.datum||"").slice(0,4);const n=+p.jaren||3;const done=Math.max(0,Math.min(n,year-y0+1));return amt-amt/n*done}
+function warranty(it){if(!it.garantieTot)return "";const d=daysTo(it.garantieTot);if(d<0)return "Verlopen";if(d<90)return "Bijna verlopen";return "Loopt"}
+function nextInvNr(year){const nums=S.invoices.filter(i=>(i.nummer||"").startsWith(year+"-")).map(i=>+i.nummer.split("-")[1]||0);return `${year}-${String((nums.length?Math.max(...nums):0)+1).padStart(3,"0")}`}
+
+/* ================= navigation ================= */
+function badge(v){if(!ready)return "";
+  if(v==="vandaag"){const n=S.bookings.filter(b=>flags(b).length).length;return n||""}
+  if(v==="facturen"){const n=S.invoices.filter(i=>invStatus(i)==="Vervallen").length;return n||""}
+  if(v==="taken"){const n=S.tasks.filter(t=>!t.klaar).length;return n||""}
+  if(v==="aanvragen"){const n=S.leads.filter(l=>["Nieuw"].includes(l.status)).length;return n||""}
+  return ""}
+function renderNav(){
+  const cur=UI.view;const inMeer=!MOBILE.includes(cur);
+  let h=`<div class="brand"><span class="logo">PRIMEMOMENTS<i></i></span><small>Headquarter</small></div>
+  <button class="btn newbtn" data-act="new">+ Nieuw</button>`;
+  NAV.forEach(([g,items])=>{h+=`<div class="grp">${g}</div>`;items.forEach(([k,l])=>{const mob=MOBILE.includes(k);h+=`<a class="nav-a${mob?"":" d-only"}" href="#${k}" ${cur===k?'aria-current="page"':""}>${ico(k)}<span>${k==="geld"?"<span class='m'>Geld</span>":l}</span><span class="cnt">${badge(k)}</span></a>`})});
+  h+=`<button class="nav-a d-only" data-logout style="background:none;border:0;cursor:pointer;margin-top:auto;font:inherit">${ico("meer")}<span>Afmelden</span></button>`;
+  h+=`<a class="nav-a m-only" href="#meer" ${inMeer?'aria-current="page"':""}>${ico("meer")}<span>Meer</span></a>`;
+  $("#nav").innerHTML=h;
+  // On desktop show "Rapporten" text; on phone "Geld"
+  document.querySelectorAll("#nav .m").forEach(e=>e.textContent=matchMedia("(min-width:960px)").matches?"Rapporten":"Geld");
+  // order on mobile: put tabs in MOBILE order
+  if(!matchMedia("(min-width:960px)").matches){const n=$("#nav");MOBILE.forEach(k=>{const a=n.querySelector(`a[href="#${k}"]`);if(a)n.appendChild(a)})}
+}
+
+/* ================= row renderers ================= */
+function rowB(b,opt={}){const d=pd(b.datum);const fl=opt.noFlags?[]:flags(b);
+  return `<button class="row${b.status==="Geannuleerd"?" cancel":""}" data-edit="bookings:${b.id}">
+   <div class="date${d?"":" none"}">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}${d.getFullYear()!==now().getFullYear()?" '"+String(d.getFullYear()).slice(2):""}</span>`:`<b>?</b><span>datum</span>`}</div>
+   <div class="main-t"><div class="t">${esc(b.klant)}${b.event?` <span style="color:var(--muted);font-weight:400">· ${esc(b.event)}</span>`:""}</div>
+    <div class="d">${[b.start?(b.eind?`${esc(b.start)}–${esc(b.eind)}`:esc(b.start)):"",esc(b.locatie||"")].filter(Boolean).join(" · ")}</div>
+    <div class="pills">${pill(b.status)}${teamChips(b)}${fl.map(f=>pill(f,"p-bad")).join("")}${b.betaling==="Betaald"?pill("Betaald"):b.betaling==="Voorschot"?pill("Voorschot"):""}${b.levering==="In montage"?pill("In montage","p-In-montage"):""}</div></div>
+   <div class="amt">${b.video?eur(b.video):(b.gratis?"<small>gratis</small>":"–")}${b.foto?`<small>+ foto ${eur(b.foto)}</small>`:""}</div></button>`}
+function rowInv(i){const st=invStatus(i);return `<button class="row" data-inv="${i.id}">
+  <div class="date"><b style="font-size:15px">${esc((i.nummer||"").split("-")[1]||"?")}</b><span>${esc((i.nummer||"").split("-")[0]||"")}</span></div>
+  <div class="main-t"><div class="t">${esc(i.klant)}</div><div class="d">${esc(i.type||"Factuur")} · ${dl_(i.datum)}${st!=="Betaald"&&i.vervaldatum?" · vervalt "+dl_(i.vervaldatum):""}</div><div class="pills">${pill(st)}</div></div>
+  <div class="amt">${eur2(invTotal(i))}</div></button>`}
+function rowP(p,year){return `<button class="row two" data-edit="purchases:${p.id}">
+  <div class="main-t"><div class="t">${esc(p.leverancier)} <span style="color:var(--muted);font-weight:400">· ${esc(p.omschrijving||"")}</span></div>
+  <div class="d">${dl_(p.datum)}${p.factuurnr?" · "+esc(p.factuurnr):""}${p.valuta&&p.valuta!=="EUR"?` · ${esc(p.valuta)} ${(+p.bedragOrig||0).toFixed(2)}`:""}</div>
+  <div class="pills">${pill(p.categorie,"p-neutral")}${p.soort==="Investering"?pill(`Investering · ${p.jaren||3} jaar`,"p-info"):""}${p.zakelijk!=null&&+p.zakelijk<100?pill(p.zakelijk+"% zakelijk","p-warn"):""}${p.notitie&&/controle|vraag|check/i.test(p.notitie)?pill("Nakijken","p-bad"):""}</div></div>
+  <div class="amt">${eur2(p.bedrag)}${p.soort==="Investering"?`<small>${year} aftrekbaar ${eur2(deductible(p,year))}</small>`:""}</div></button>`}
+
+/* ================= views ================= */
+const V={};
+V.vandaag=()=>{
+  const B=S.bookings,ym=iso(now()).slice(0,7),h=new Date().getHours();
+  const groet=h<12?"Goeiemorgen":h<18?"Goeiemiddag":"Goeieavond";
+  const up=sorted(B.filter(b=>{const d=daysTo(b.datum);return d!==null&&d>=0&&b.status!=="Geannuleerd"}));
+  const nx=up[0];
+  const maandV=B.filter(b=>(b.datum||"").startsWith(ym)).reduce((a,b)=>a+vid(b),0);
+  const ontv=B.reduce((a,b)=>a+toReceive(b),0);
+  const openInv=S.invoices.filter(i=>invStatus(i)!=="Betaald");
+  const komend=up.filter(b=>daysTo(b.datum)<=21);
+  const aandacht=sorted(B.filter(b=>flags(b).length));
+  const montage=sorted(B.filter(b=>b.levering==="In montage"||(b.status==="Afgerond"&&b.levering==="Nog te filmen")));
+  const vervallen=S.invoices.filter(i=>invStatus(i)==="Vervallen");
+  const nxDays=nx?daysTo(nx.datum):null;
+  const imp=!S.bookings.length&&!S.invoices.length?`<div class="entry" style="margin-bottom:22px"><h2 style="font-size:20px">Je gegevens importeren</h2><p class="note">Je HQ is nog leeg. Kies het bestand <b>PrimeMoments_HQ_gegevens.json</b> dat je van Claude kreeg. Dat moet maar één keer.</p><input type="file" id="importfile" accept=".json,application/json" style="font-family:var(--body);font-size:14px;text-transform:none;letter-spacing:0"></div>`:"";
+  return imp+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
+  ${nx?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
+   <div><div class="lbl">Volgende shoot · ${new Date(pd(nx.datum)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?(nx.eind?nx.start+"–"+nx.eind:nx.start):"",nx.locatie||"",nx.fotograaf?"Fotograaf: "+nx.fotograaf:""].filter(Boolean).map(esc).join(" · ")||"Details aanvullen"}</div></div></button>`:""}
+  <div class="tiles">
+   <div class="tile dark"><div class="k">${cap(MAANDL[now().getMonth()])} · gepland video</div><div class="v">${eur(maandV)}</div><div class="s">${B.filter(b=>(b.datum||"").startsWith(ym)&&b.status!=="Geannuleerd").length} opdrachten</div></div>
+   <div class="tile"><div class="k">Nog te ontvangen</div><div class="v">${eur(ontv)}</div><div class="s">uit bevestigde boekingen</div></div>
+   <div class="tile ${vervallen.length?"bad":""}"><div class="k">Open facturen</div><div class="v">${eur(openInv.reduce((a,i)=>a+invTotal(i),0))}</div><div class="s">${openInv.length} open${vervallen.length?` · ${vervallen.length} vervallen`:""}</div></div>
+   <div class="tile"><div class="k">Aanvragen in behandeling</div><div class="v">${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</div><div class="s"><a href="#aanvragen">bekijk pipeline</a></div></div>
+  </div>
+  <div class="cols"><div>
+   <section class="block"><h2>Komende 3 weken <span class="meta">${komend.length} shoots · ${eur(komend.reduce((a,b)=>a+vid(b),0))}</span></h2>${komend.length?`<div class="list">${komend.map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Geen shoots in de komende 3 weken.</div>`}</section>
+   ${montage.length?`<section class="block"><h2>Nog te monteren <span class="meta">${montage.length}</span></h2><div class="list">${montage.map(b=>rowB(b,{noFlags:1})).join("")}</div></section>`:""}
+   <section class="block"><h2>Vraagt aandacht <span class="meta">${aandacht.length>8?`<a href="#boekingen" data-goaandacht>alle ${aandacht.length}</a>`:aandacht.length}</span></h2>${aandacht.length?`<div class="list">${[...aandacht.filter(b=>daysTo(b.datum)===null||daysTo(b.datum)>=-30),...aandacht.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)<-30)].slice(0,8).map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Alles is in orde.</div>`}</section>
+  </div><div>
+   <section class="block"><h2>Taken <span class="meta"><a href="#taken">alle ${S.tasks.filter(t=>!t.klaar).length}</a></span></h2>${taskList(S.tasks.filter(t=>!t.klaar).slice(0,7),true)}</section>
+   ${vervallen.length?`<section class="block"><h2>Facturen vervallen <span class="meta">${vervallen.length}</span></h2><div class="list">${vervallen.map(rowInv).join("")}</div></section>`:""}
+  </div></div>`};
+
+V.agenda=()=>{
+  if(!UI.cal){const d=now();UI.cal=[d.getFullYear(),d.getMonth()]}
+  const [y,m]=UI.cal;const first=new Date(y,m,1);const off=(first.getDay()+6)%7;const start=new Date(y,m,1-off);
+  const weeks=Math.ceil((off+new Date(y,m+1,0).getDate())/7);const td=iso(now());
+  let cells="";
+  for(let i=0;i<weeks*7;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=iso(d);
+    const evs=sorted(S.bookings.filter(b=>b.datum===ds),"start");const bk=inBlock(ds);
+    cells+=`<button class="day${d.getMonth()!==m?" out":""}${ds===td?" today":""}${bk?" blk":""}" data-day="${ds}" aria-pressed="${UI.calSel===ds}" aria-label="${d.getDate()} ${MAANDL[d.getMonth()]}, ${evs.length} boekingen">
+     <span class="n">${d.getDate()}</span>
+     ${bk?`<span class="ev e-blk">${esc(bk.titel)}</span><span class="blkbar"></span>`:""}
+     ${evs.slice(0,3).map(b=>`<span class="ev e-${esc(b.status)}">${b.start?esc(b.start)+" ":""}${esc(b.klant)}</span>`).join("")}${evs.length>3?`<span class="ev" style="color:var(--muted)">+${evs.length-3} meer</span>`:""}
+     <span class="dots">${evs.map(b=>`<i class="dot d-${esc(b.status)}"></i>`).join("")}</span></button>`}
+  const ym=`${y}-${String(m+1).padStart(2,"0")}`;
+  const sel=UI.calSel;
+  const list=sel?sorted(S.bookings.filter(b=>b.datum===sel),"start"):sorted(S.bookings.filter(b=>(b.datum||"").startsWith(ym)));
+  const bks=S.blocks.filter(k=>sel?(sel>=k.van&&sel<=(k.tot||k.van)):((k.van||"")<=ym+"-31"&&(k.tot||k.van||"")>=ym+"-01"));
+  const total=S.bookings.filter(b=>(b.datum||"").startsWith(ym)).reduce((a,b)=>a+vid(b),0);
+  return `<div class="ph"><div><div class="eyebrow">Planning</div><h1>${cap(MAANDL[m])} ${y}</h1></div>
+   <div class="acts cal-nav"><button class="btn ghost" data-cal="-1" aria-label="Vorige maand">‹</button><button class="btn ghost" data-cal="0">Vandaag</button><button class="btn ghost" data-cal="1" aria-label="Volgende maand">›</button><button class="btn" data-newb="${sel||""}">+ Boeking</button></div></div>
+  <div class="cal"><div class="cal-head">${DAG.map(d=>`<span>${d}</span>`).join("")}</div><div class="cal-grid">${cells}</div></div>
+  <div class="legend"><span><i style="background:var(--ok)"></i>Bevestigd</span><span><i style="background:var(--warn)"></i>Gereserveerd</span><span><i style="background:var(--done)"></i>Afgerond</span><span><i style="background:var(--bad)"></i>Geannuleerd</span><span><i style="background:var(--sand);border:1px solid var(--line)"></i>Niet beschikbaar</span></div>
+  <section class="block" style="margin-top:22px"><h2>${sel?cap(new Date(pd(sel)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})):"Deze maand"} <span class="meta">${sel?`<a href="#agenda" data-clearsel>toon hele maand</a>`:`${list.filter(b=>b.status!=="Geannuleerd").length} boekingen · ${eur(total)}`}</span></h2>
+   ${bks.map(k=>`<div class="list" style="margin-bottom:10px"><button class="row two" data-edit="blocks:${k.id}"><div class="main-t"><div class="t">${esc(k.titel)}</div><div class="d">${dl_(k.van)} – ${dl_(k.tot||k.van)}${k.notitie?" · "+esc(k.notitie):""}</div></div><div class="amt">${pill("Niet beschikbaar","p-neutral")}</div></button></div>`).join("")}
+   ${list.length?`<div class="list">${list.map(b=>rowB(b)).join("")}</div>`:`<div class="empty">${sel?`Niets gepland. <button class="btn sm" data-newb="${sel}" style="margin-left:6px">+ Boeking op deze dag</button>`:"Niets gepland deze maand."}</div>`}
+   <div style="margin-top:12px"><button class="btn ghost sm" data-new="blocks">Dagen blokkeren</button></div></section>`};
+
+const BF={komend:"Komend",gereserveerd:"Gereserveerd",aandacht:"Vraagt aandacht",montage:"Te monteren",afgerond:"Afgerond",geannuleerd:"Geannuleerd",alles:"Alles"};
+V.boekingen=()=>{
+  let L=S.bookings;const f=UI.bFilter;
+  if(f==="komend")L=L.filter(b=>!["Geannuleerd","Afgerond"].includes(b.status)&&(daysTo(b.datum)===null||daysTo(b.datum)>=0));
+  if(f==="gereserveerd")L=L.filter(b=>b.status==="Gereserveerd");
+  if(f==="aandacht")L=L.filter(b=>flags(b).length);
+  if(f==="montage")L=L.filter(b=>b.levering==="In montage"||(b.status==="Afgerond"&&b.levering==="Nog te filmen"));
+  if(f==="afgerond")L=L.filter(b=>b.status==="Afgerond");
+  if(f==="geannuleerd")L=L.filter(b=>b.status==="Geannuleerd");
+  if(UI.bSearch){const q=UI.bSearch.toLowerCase();L=S.bookings.filter(b=>[b.klant,b.namen,b.event,b.locatie,b.notitie,b.contact,b.fotograaf].join(" ").toLowerCase().includes(q))}
+  L=sorted(L);if(f==="afgerond"&&!UI.bSearch)L.reverse();
+  const groups=[];L.forEach(b=>{const k=b.datum?b.datum.slice(0,7):"zzz";let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(b)});
+  const html=groups.map(g=>{const name=g.k==="zzz"?"Zonder datum":cap(MAANDL[+g.k.slice(5,7)-1])+" "+g.k.slice(0,4);
+    return `<section class="block"><h2>${name} <span class="meta">${g.items.filter(b=>b.status!=="Geannuleerd").length} · ${eur(g.items.reduce((a,b)=>a+vid(b),0))}</span></h2><div class="list">${g.items.map(b=>rowB(b)).join("")}</div></section>`}).join("");
+  return `<div class="ph"><div><div class="eyebrow">Klantenbestand · ${S.bookings.length} boekingen</div><h1>Boekingen</h1></div><div class="acts"><button class="btn ghost" data-csv="bookings">Exporteer</button><button class="btn" data-newb="">+ Boeking</button></div></div>
+  <input class="search" id="bsearch" type="search" placeholder="Zoek op naam, event, locatie of contact" value="${esc(UI.bSearch)}" aria-label="Zoek boekingen">
+  ${UI.bSearch?"":`<div class="chips">${Object.entries(BF).map(([k,v])=>`<button class="chip" data-bf="${k}" aria-pressed="${f===k}">${v}</button>`).join("")}</div>`}
+  ${html||`<div class="empty">Geen boekingen in deze selectie.</div>`}`};
+
+const LSTAT=["Nieuw","Offerte gestuurd","Wacht op antwoord","Geboekt","Verloren"];
+V.aanvragen=()=>{
+  const act=LSTAT.slice(0,3);const L=st=>S.leads.filter(l=>(l.status||"Nieuw")===st).sort((a,b)=>(b.ontvangen||"").localeCompare(a.ontvangen||""));
+  const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.kanaal||"",l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
+  const geboekt=L("Geboekt"),verloren=L("Verloren");
+  const conv=geboekt.length+verloren.length?Math.round(geboekt.length/(geboekt.length+verloren.length)*100):0;
+  return `<div class="ph"><div><div class="eyebrow">Pipeline</div><h1>Aanvragen</h1></div><div class="acts"><button class="btn" data-new="leads">+ Aanvraag</button></div></div>
+  <div class="tiles"><div class="tile"><div class="k">In behandeling</div><div class="v">${act.reduce((a,s)=>a+L(s).length,0)}</div></div><div class="tile"><div class="k">Openstaande offertes</div><div class="v">${eur(act.reduce((a,s)=>a+L(s).reduce((x,l)=>x+(+l.prijs||0),0),0))}</div></div><div class="tile"><div class="k">Geboekt / verloren</div><div class="v">${geboekt.length} / ${verloren.length}</div><div class="s">${conv}% omgezet</div></div></div>
+  ${act.map(s=>`<section class="block"><h2>${s} <span class="meta">${L(s).length}</span></h2>${L(s).length?`<div class="list">${L(s).map(rowL).join("")}</div>`:`<div class="empty">Niets in deze stap.</div>`}</section>`).join("")}
+  <section class="block"><h2>Afgesloten <span class="meta"><button class="btn ghost sm" data-act="lost">${UI.lostOpen?"verberg":"toon"} ${geboekt.length+verloren.length}</button></span></h2>${UI.lostOpen?`<div class="list">${[...geboekt,...verloren].map(rowL).join("")}</div>`:""}</section>
+  <p class="note">Elke DM of WhatsApp met een vraag voor een datum of offerte komt hier. Open een aanvraag en tik "Maak boeking" zodra ze vastleggen.</p>`};
+
+function clientIndex(){const map={};const key=s=>(s||"").trim();
+  S.bookings.forEach(b=>{const k=key(b.klant);if(!k)return;const o=map[k]=map[k]||{naam:k,bookings:[],invoices:[],contact:""};o.bookings.push(b);if(b.contact&&!o.contact)o.contact=b.contact});
+  S.invoices.forEach(i=>{const k=Object.keys(map).find(n=>(i.klant||"").toLowerCase().includes(n.toLowerCase())||n.toLowerCase().includes((i.klant||"").toLowerCase().split(" (")[0]));const o=k?map[k]:(map[i.klant]=map[i.klant]||{naam:i.klant,bookings:[],invoices:[],contact:""});o.invoices.push(i)});
+  return map}
+V.klanten=()=>{
+  const map=clientIndex();const names=Object.keys(map).sort((a,b)=>a.localeCompare(b,"nl"));
+  const tot=n=>map[n].bookings.reduce((a,b)=>a+vid(b),0);
+  const q=(UI.kSearch||"").toLowerCase();const shown=names.filter(n=>!q||n.toLowerCase().includes(q));
+  return `<div class="ph"><div><div class="eyebrow">Wie je filmt</div><h1>Klanten</h1></div><div class="acts"><button class="btn ghost" data-new="companies">+ Bedrijf</button><button class="btn" data-new="recurring">+ Vaste klant</button></div></div>
+  <div class="tiles"><div class="tile"><div class="k">Klanten</div><div class="v">${names.length}</div></div><div class="tile"><div class="k">Vaste klanten</div><div class="v">${eur(S.recurring.filter(r=>r.status==="Actief").reduce((a,r)=>a+(+r.bedrag||0),0))}</div><div class="s">per maand, actief</div></div><div class="tile"><div class="k">Grootste klant</div><div class="v" style="font-size:19px;white-space:normal">${esc(names.sort((a,b)=>tot(b)-tot(a))[0]||"–")}</div></div></div>
+  <section class="block"><h2>Vaste klanten</h2>${S.recurring.length?`<div class="list">${S.recurring.map(r=>`<button class="row two" data-edit="recurring:${r.id}"><div class="main-t"><div class="t">${esc(r.naam)}</div><div class="d">${esc(r.notitie||"")}${r.sinds?" · sinds "+dl_(r.sinds):""}</div><div class="pills">${pill(r.status||"Actief")}</div></div><div class="amt">${eur(r.bedrag)}<small>per maand</small></div></button>`).join("")}</div>`:`<div class="empty">Nog geen vaste klanten.</div>`}</section>
+  <section class="block"><h2>Bedrijfsgegevens <span class="meta">voor je facturen</span></h2>${S.companies.length?`<div class="list">${S.companies.map(c=>`<button class="row two" data-edit="companies:${c.id}"><div class="main-t"><div class="t">${esc(c.naam)}${c.handelsnaam?` <span style="color:var(--muted);font-weight:400">· ${esc(c.handelsnaam)}</span>`:""}</div><div class="d">${[c.adres,c.btw,c.contact,c.mail].filter(Boolean).map(esc).join(" · ")}</div>${!c.btw||!c.adres||c.adres.length<12?`<div class="pills">${pill("Gegevens aanvullen","p-warn")}</div>`:""}</div><div class="amt">${c.peppol==="Ja"?pill("Peppol","p-info"):""}</div></button>`).join("")}</div>`:`<div class="empty">Nog geen bedrijven.</div>`}</section>
+  <section class="block"><h2>Alle klanten <span class="meta">${names.length}</span></h2><input class="search" id="ksearch" type="search" placeholder="Zoek klant" value="${esc(UI.kSearch||"")}" aria-label="Zoek klant"><div class="list">${shown.sort((a,b)=>a.localeCompare(b,"nl")).map(n=>{const o=map[n];const last=sorted(o.bookings).pop();return `<button class="row two" data-klant="${esc(n)}"><div class="main-t"><div class="t">${esc(n)}</div><div class="d">${o.bookings.length} ${o.bookings.length===1?"boeking":"boekingen"}${o.invoices.length?` · ${o.invoices.length} factuur`:""}${last&&last.datum?" · "+dl_(last.datum):""}${o.contact?" · "+esc(o.contact):""}</div></div><div class="amt">${eur(tot(n))}</div></button>`}).join("")}</div></section>`};
+
+V.facturen=()=>{
+  const yr=UI.fYear||String(now().getFullYear());const years=[...new Set(S.invoices.map(i=>(i.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
+  let L=S.invoices.filter(i=>(i.datum||"").startsWith(yr));const all=L;
+  if(UI.fFilter==="open")L=L.filter(i=>invStatus(i)!=="Betaald");if(UI.fFilter==="betaald")L=L.filter(i=>invStatus(i)==="Betaald");
+  L=[...L].sort((a,b)=>(b.nummer||"").localeCompare(a.nummer||""));
+  const sum=f=>all.filter(f).reduce((a,i)=>a+invTotal(i),0);
+  const qubbe=S.bookings.filter(b=>b.status!=="Geannuleerd"&&b.categorie==="Business"&&daysTo(b.datum)!==null&&daysTo(b.datum)<0&&vid(b)&&!b.factuur);
+  return `<div class="ph"><div><div class="eyebrow">Verkoop · btw-vrijgesteld (art. 56bis)</div><h1>Facturen</h1></div><div class="acts"><button class="btn ghost" data-csv="invoices">Exporteer voor boekhouder</button><button class="btn" data-new="invoices">+ Factuur</button></div></div>
+  <div class="tiles"><div class="tile dark"><div class="k">Gefactureerd ${yr}</div><div class="v">${eur2(sum(()=>1))}</div><div class="s">${all.length} facturen</div></div><div class="tile good"><div class="k">Ontvangen</div><div class="v">${eur2(sum(i=>invStatus(i)==="Betaald"))}</div></div><div class="tile warn"><div class="k">Open</div><div class="v">${eur2(sum(i=>invStatus(i)==="Open"))}</div></div><div class="tile bad"><div class="k">Vervallen</div><div class="v">${eur2(sum(i=>invStatus(i)==="Vervallen"))}</div></div></div>
+  <div class="toolbar"><div class="chips">${[["alle","Alle"],["open","Open"],["betaald","Betaald"]].map(([k,v])=>`<button class="chip" data-ff="${k}" aria-pressed="${UI.fFilter===k}">${v}</button>`).join("")}</div><div class="chips">${years.map(y=>`<button class="chip" data-fy="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}</div></div>
+  ${L.length?`<div class="list">${L.map(rowInv).join("")}</div>`:`<div class="empty">Geen facturen in deze selectie.</div>`}
+  ${qubbe.length?`<section class="block" style="margin-top:24px"><h2>Nog te factureren <span class="meta">zakelijke opdrachten zonder factuur</span></h2><div class="list">${qubbe.map(b=>rowB(b,{noFlags:1})).join("")}</div></section>`:""}
+  <p class="note">Volgend nummer: <b>${nextInvNr(now().getFullYear())}</b>. Open een factuur om ze te bekijken, als betaald te markeren of als bestand te bewaren.</p>`};
+
+const PCAT=["Camera & materiaal","Software","Website & domein","Administratie","Marketing","Kantoor","Verplaatsing","Opleiding","Overige"];
+V.aankopen=()=>{
+  const yr=+(UI.aYear||now().getFullYear());const years=[...new Set(S.purchases.map(p=>(p.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
+  const L=S.purchases.filter(p=>(p.datum||"").startsWith(String(yr))).sort((a,b)=>(b.datum||"").localeCompare(a.datum||""));
+  const spent=L.reduce((a,p)=>a+(+p.bedrag||0),0);
+  const ded=S.purchases.reduce((a,p)=>a+deductible(p,yr),0);
+  const inv=L.filter(p=>p.soort==="Investering").reduce((a,p)=>a+(+p.bedrag||0),0);
+  const byCat={};L.forEach(p=>byCat[p.categorie||"Overige"]=(byCat[p.categorie||"Overige"]||0)+(+p.bedrag||0));
+  const mx=Math.max(1,...Object.values(byCat));
+  const groups=[];L.forEach(p=>{const k=p.datum.slice(0,7);let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(p)});
+  return `<div class="ph"><div><div class="eyebrow">Kosten & investeringen</div><h1>Aankopen</h1></div><div class="acts"><button class="btn ghost" data-csv="purchases">Exporteer voor boekhouder</button><button class="btn" data-new="purchases">+ Aankoop</button></div></div>
+  <div class="toolbar"><div class="chips">${years.map(y=>`<button class="chip" data-ay="${y}" aria-pressed="${+y===yr}">${y}</button>`).join("")}</div></div>
+  <div class="tiles"><div class="tile dark"><div class="k">Uitgegeven ${yr}</div><div class="v">${eur2(spent)}</div><div class="s">${L.length} regels</div></div><div class="tile"><div class="k">Aftrekbaar ${yr}</div><div class="v">${eur2(ded)}</div><div class="s">kosten + afschrijving</div></div><div class="tile"><div class="k">Waarvan investeringen</div><div class="v">${eur2(inv)}</div><div class="s">afgeschreven over 3 jaar</div></div></div>
+  <div class="cols"><div>${groups.map(g=>`<section class="block"><h2>${cap(MAANDL[+g.k.slice(5,7)-1])} <span class="meta">${eur2(g.items.reduce((a,p)=>a+(+p.bedrag||0),0))}</span></h2><div class="list">${g.items.map(p=>rowP(p,yr)).join("")}</div></section>`).join("")||`<div class="empty">Geen aankopen in ${yr}.</div>`}</div>
+  <div><section class="block"><h2>Per categorie</h2><div class="list" style="padding:8px 0">${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="hbar"><span>${esc(k)}</span><span class="tr"><span style="width:${v/mx*100}%"></span></span><b>${eur(v)}</b></div>`).join("")||`<div class="hbar"><span style="color:var(--muted)">Nog niets</span></div>`}</div></section>
+  <p class="note">Een aankoop die jaren meegaat (camera, lens, licentie) is een investering: per jaar trek je maar een deel af. De rest is gewone kost. Laat de keuze nakijken door je boekhouder.</p></div></div>`};
+
+V.inventaris=()=>{
+  const L=[...S.inventory].sort((a,b)=>(a.categorie||"").localeCompare(b.categorie||"")||(b.prijs||0)-(a.prijs||0));
+  const yr=now().getFullYear();const tot=L.filter(i=>i.staat!=="Verkocht").reduce((a,i)=>a+(+i.prijs||0),0);
+  const soon=L.filter(i=>warranty(i)==="Bijna verlopen");
+  const cats=[...new Set(L.map(i=>i.categorie||"Overige"))];
+  return `<div class="ph"><div><div class="eyebrow">Je materiaal</div><h1>Inventaris</h1></div><div class="acts"><button class="btn" data-new="inventory">+ Materiaal</button></div></div>
+  <div class="tiles"><div class="tile dark"><div class="k">Aankoopwaarde</div><div class="v">${eur(tot)}</div><div class="s">${L.length} stuks</div></div><div class="tile"><div class="k">Fiscale restwaarde eind ${yr}</div><div class="v">${eur(S.purchases.reduce((a,p)=>a+restwaarde(p,yr),0))}</div><div class="s">investeringen</div></div><div class="tile ${soon.length?"warn":""}"><div class="k">Garantie bijna voorbij</div><div class="v">${soon.length}</div><div class="s">binnen 3 maanden</div></div></div>
+  ${cats.map(c=>{const I=L.filter(i=>(i.categorie||"Overige")===c);return `<section class="block"><h2>${esc(c)} <span class="meta">${I.length} · ${eur(I.reduce((a,i)=>a+(+i.prijs||0),0))}</span></h2><div class="list">${I.map(i=>`<button class="row two" data-edit="inventory:${i.id}"><div class="main-t"><div class="t">${esc(i.merk?i.merk+" ":"")}${esc(i.item)}</div><div class="d">${[dl_(i.aankoopdatum),i.leverancier,i.serienummer?"SN "+i.serienummer:""].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${warranty(i)?pill((warranty(i)==="Loopt"?"Garantie tot ":"Garantie ")+(warranty(i)==="Loopt"?dShort(i.garantieTot):warranty(i).toLowerCase()),cls(warranty(i))):pill("Geen garantie","p-neutral")}${i.staat&&i.staat!=="In gebruik"?pill(i.staat,"p-warn"):""}</div></div><div class="amt">${eur2(i.prijs)}</div></button>`).join("")}</div></section>`}).join("")}`};
+
+V.geld=()=>{
+  const yr=+(UI.year||now().getFullYear());
+  const years=[...new Set([...S.bookings.map(b=>(b.datum||"").slice(0,4)),...S.invoices.map(i=>(i.datum||"").slice(0,4)),...S.purchases.map(p=>(p.datum||"").slice(0,4))].filter(Boolean).concat([String(now().getFullYear())]))].sort();
+  const Y=S.bookings.filter(b=>(b.datum||"").startsWith(String(yr))&&b.status!=="Geannuleerd");
+  const m=Array.from({length:12},(_,i)=>{const L=Y.filter(b=>+b.datum.slice(5,7)===i+1);return{c:L.filter(b=>b.status!=="Gereserveerd").reduce((a,b)=>a+vid(b),0),r:L.filter(b=>b.status==="Gereserveerd").reduce((a,b)=>a+vid(b),0),n:L.length}});
+  const max=Math.max(1,...m.map(x=>x.c+x.r));
+  const inv=S.invoices.filter(i=>(i.datum||"").startsWith(String(yr)));
+  const omzet=inv.reduce((a,i)=>a+invTotal(i),0);
+  const kosten=S.purchases.reduce((a,p)=>a+deductible(p,yr),0);
+  const result=omzet-kosten;const drempel=+(S.settings.drempel||{})[yr]||1922.16;
+  const planned=Y.reduce((a,b)=>a+vid(b),0);
+  const sel=UI.month!=null?Y.filter(b=>+b.datum.slice(5,7)===UI.month+1):null;
+  const rows=Array.from({length:12},(_,i)=>{const mm=String(i+1).padStart(2,"0");const f=inv.filter(x=>x.datum.slice(5,7)===mm).reduce((a,x)=>a+invTotal(x),0);const u=S.purchases.filter(p=>(p.datum||"").startsWith(yr+"-"+mm)).reduce((a,p)=>a+(+p.bedrag||0),0);return{f,u,p:m[i].c+m[i].r}});
+  const foto=Y.reduce((a,b)=>a+(+b.foto||0),0);
+  return `<div class="ph"><div><div class="eyebrow">Financieel overzicht</div><h1>Rapporten</h1></div><div class="chips" style="margin:0">${years.map(y=>`<button class="chip" data-yr="${y}" aria-pressed="${+y===yr}">${y}</button>`).join("")}</div></div>
+  <div class="tiles"><div class="tile dark"><div class="k">Gefactureerd ${yr}</div><div class="v">${eur(omzet)}</div><div class="s">${inv.length} facturen</div></div><div class="tile"><div class="k">Aftrekbare kosten</div><div class="v">${eur(kosten)}</div><div class="s">incl. afschrijving</div></div><div class="tile ${result<0?"bad":"good"}"><div class="k">Resultaat (schatting)</div><div class="v">${eur(result)}</div><div class="s">${result<0?"verlies":"winst"}</div></div><div class="tile"><div class="k">Gepland video ${yr}</div><div class="v">${eur(planned)}</div><div class="s">uit je boekingen</div></div></div>
+  <section class="block"><h2>Belasting & sociale bijdragen ${yr}</h2><div class="list"><div class="kv">
+   <span>Gefactureerd</span><b>${eur2(omzet)}</b>
+   <span>Aftrekbare kosten + afschrijving</span><b class="neg">– ${eur2(kosten)}</b>
+   <span class="tot">Geschat resultaat</span><b class="tot ${result<0?"neg":"pos"}">${eur2(result)}</b>
+   <span>Grens sociale bijdragen bijberoep${yr===2026?" (half jaar actief)":""}</span><b>${eur2(drempel)}</b>
+   <span class="tot">Je kan nog factureren zonder sociale bijdragen</span><b class="tot">${eur2(Math.max(0,drempel-result))}</b>
+   ${result<0?`<span>Nog factureren tot je op nul staat (geen belasting)</span><b>${eur2(-result)}</b>`:""}
+  </div></div><p class="note">Schatting op basis van je facturen en aankopen in dit systeem. Ik ben geen boekhouder: laat de cijfers voor je aangifte nakijken door je boekhouder of Xerius.</p></section>
+  <section class="block"><h2>Planning per maand <span class="meta">tik op een maand</span></h2><div class="chart"><div class="bars">${m.map((x,i)=>`<button class="bar" data-mo="${i}" aria-pressed="${UI.month===i}" aria-label="${MAANDL[i]}: ${eur(x.c+x.r)}"><span class="val">${x.c+x.r?eur(x.c+x.r).replace("€ ","€"):""}</span>${x.r?`<span class="seg r" style="height:${x.r/max*150}px"></span>`:""}${x.c?`<span class="seg c" style="height:${x.c/max*150}px"></span>`:""}</button>`).join("")}</div><div class="mlabels">${MAAND.map(x=>`<span>${x}</span>`).join("")}</div></div>
+   <div class="legend"><span><i style="background:var(--accent)"></i>Bevestigd / afgerond</span><span><i style="background:color-mix(in srgb,var(--warn) 50%,var(--surface))"></i>Gereserveerd</span><span>Alleen video · foto apart: ${eur(foto)}</span></div></section>
+  ${sel?`<section class="block"><h2>${cap(MAANDL[UI.month])} ${yr} <span class="meta">${eur(sel.reduce((a,b)=>a+vid(b),0))}</span></h2>${sel.length?`<div class="list">${sorted(sel).map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Geen boekingen in deze maand.</div>`}</section>`:""}
+  <section class="block"><h2>Maand per maand</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Maand</th><th>Gepland (video)</th><th>Gefactureerd</th><th>Uitgegeven</th><th>Saldo</th></tr></thead><tbody>
+   ${rows.map((r,i)=>`<tr><td>${cap(MAANDL[i])}</td><td>${r.p?eur(r.p):"–"}</td><td>${r.f?eur2(r.f):"–"}</td><td>${r.u?eur2(r.u):"–"}</td><td style="color:${r.f-r.u<0?"var(--bad)":"inherit"}">${r.f||r.u?eur2(r.f-r.u):"–"}</td></tr>`).join("")}
+   <tr class="tot"><td>Totaal</td><td>${eur(planned)}</td><td>${eur2(omzet)}</td><td>${eur2(rows.reduce((a,r)=>a+r.u,0))}</td><td>${eur2(omzet-rows.reduce((a,r)=>a+r.u,0))}</td></tr></tbody></table></div>
+   <p class="note">"Uitgegeven" is wat je echt betaald hebt. Voor de belasting telt een investering gespreid, daarom verschilt het van "aftrekbare kosten".</p></section>
+  <section class="block"><h2>Apart gehouden</h2><div class="list"><div class="kv"><span>Fotografie ${yr} (telt niet mee in je omzet)</span><b>${eur(foto)}</b>${S.recurring.map(r=>`<span>${esc(r.naam)} · vaste klant (${esc((r.status||"").toLowerCase())})</span><b>${eur(r.bedrag)}/maand</b>`).join("")}</div></div></section>`};
+
+function taskList(L,compact){
+  return `<div class="list">${L.map(t=>`<div class="task${t.klaar?" done":""}"><input type="checkbox" id="t-${t.id}" data-tk="${t.id}" ${t.klaar?"checked":""} aria-label="Afvinken: ${esc(t.titel)}"><span class="tt" data-edit="tasks:${t.id}">${esc(t.titel)}${t.deadline?`<br><small style="color:${daysTo(t.deadline)<0?"var(--bad)":"var(--muted)"}">tegen ${dl_(t.deadline)}</small>`:""}${t.notitie?`<br><small style="color:var(--muted)">${esc(t.notitie)}</small>`:""}</span>${compact?"":`<button class="x" data-tdel="${t.id}" aria-label="Verwijder taak">×</button>`}</div>`).join("")||`<div class="task"><span class="tt" style="color:var(--muted)">Geen open taken.</span></div>`}
+  ${canWrite?`<form class="addline" data-addtask><input id="newtask${compact?"c":""}" placeholder="Nieuwe taak…" aria-label="Nieuwe taak"><button class="btn sm">Voeg toe</button></form>`:""}</div>`}
+V.taken=()=>{const open=S.tasks.filter(t=>!t.klaar).sort((a,b)=>(a.deadline||"9999").localeCompare(b.deadline||"9999")||(a.created||"").localeCompare(b.created||"")),done=S.tasks.filter(t=>t.klaar);
+  return `<div class="ph"><div><div class="eyebrow">Opvolgen</div><h1>Taken</h1></div></div>
+  <section class="block"><h2>Open <span class="meta">${open.length}</span></h2>${taskList(open)}</section>
+  ${done.length?`<section class="block"><h2>Klaar <span class="meta">${done.length}</span></h2>${taskList(done)}</section>`:""}`};
+
+V.partners=()=>{const R=[...new Set(S.partners.map(p=>p.rol||"Partner"))];
+  return `<div class="ph"><div><div class="eyebrow">Team & samenwerking</div><h1>Partners</h1></div><div class="acts"><button class="btn" data-new="partners">+ Partner</button></div></div>
+  ${R.map(r=>`<section class="block"><h2>${esc(r)} <span class="meta">${S.partners.filter(p=>(p.rol||"Partner")===r).length}</span></h2><div class="list">${S.partners.filter(p=>(p.rol||"Partner")===r).map(p=>{const n=S.bookings.filter(b=>(b.fotograaf||"").toLowerCase().includes((p.naam||"").toLowerCase().split(" ")[0])).length;return `<button class="row two" data-edit="partners:${p.id}"><div class="main-t"><div class="t">${esc(p.naam)}</div><div class="d">${[p.contact,p.notitie].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${pill(p.type,"p-neutral")}</div></div><div class="amt">${n?`${n}<small>boekingen</small>`:""}</div></button>`}).join("")}</div></section>`).join("")||`<div class="empty">Nog geen partners.</div>`}`};
+
+V.meer=()=>`<div class="ph"><div><div class="eyebrow">Prime Moments HQ</div><h1>Meer</h1></div><div class="acts"><button class="btn ghost" data-logout>Afmelden</button></div></div>
+ <div class="menu">${[["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
+
+V.kennisbank=()=>`<div class="ph"><div><div class="eyebrow">Alles op één plek</div><h1>Kennisbank</h1></div></div>
+<div class="kb">
+<details open><summary>Love Stories · pakketten</summary><div class="in">
+<table><tr><th>Pakket</th><th>Uren</th><th>Vanaf</th><th>Inbegrepen</th></tr>
+<tr><td>Prime Moment</td><td>2–5 u</td><td>€ 299</td><td>Momentregistratie + € 200</td></tr>
+<tr><td>Prime Signature</td><td>6–7 u</td><td>€ 699</td><td>Momentregistratie, drone, loveshoot*</td></tr>
+<tr><td>Prime Legacy</td><td>8 u +</td><td>€ 899</td><td>Momentregistratie, drone, loveshoot*</td></tr></table>
+<ul><li>Basis: 1 uur € 250, elk extra uur + € 100.</li><li>Vanaf-prijs = startuur min € 50 portfoliokorting.</li><li>* Loveshoot alleen als er een fotograaf is (eigen of van de klant). Drone als het weer het toelaat.</li><li>Altijd exclusief fotograaf; foto is een optie bij elk pakket.</li></ul></div></details>
+<details><summary>Business & events</summary><div class="in"><ul><li>Pakketten: Prime Social, Prime Event, Prime Impact.</li><li>Standaard: cinematic film van 30–40 sec, € 200 per uur filmen.</li><li>Businessfotografie: € 90 per uur.</li><li>Ceramique Maasmechelen: € 800/maand, 1 shootdag, 3 maanden proef, start rond 10 u, enkel showroom, geen avondshoots.</li></ul></div></details>
+<details><summary>Kleine Momenten</summary><div class="in"><p>Combi foto + film, 1 uur, ± 50–100 foto's + cinematic film. Voor aanzoek, zwangerschap, gender reveal, koppel of gezin. Enkel als combi.</p></div></details>
+<details><summary>Acties</summary><div class="in"><ul><li>Januari-actie: € 100 korting op Love Stories van minstens 6 uur, voor shoots in januari 2027.</li><li>Portfoliokorting € 50: mag fragmenten delen op sociale media en in advertenties.</li></ul></div></details>
+<details><summary>Boeken & betalen</summary><div class="in"><ul><li>Datum en offerte via DM of WhatsApp, geen beschikbaarheidskalender op de site.</li><li>Klantenovereenkomst (pdf met voorwaarden) per mail. Voorschot betalen = akkoord.</li><li>Voorschot 20 %, op de factuur enkel het bedrag.</li><li>Saldo cash op de dag of binnen 7 dagen.</li><li>Facturen: ${now().getFullYear()}-001, -002… · betaaltermijn 7 dagen · btw-vrijstelling art. 56bis WBTW.</li><li>Peppol via Doccle Pro · boekhouder: Exact / WinBooks Connect (dossier KULAK).</li><li>Bestanden: Bureaublad › Klantenbestand › Facturen (en › Aankoop).</li></ul></div></details>
+<details><summary>Beeldmateriaal</summary><div class="in"><ul><li>Film van Miray niet delen.</li><li>Beelden van Aleyna Özgen niet in promo.</li><li>Ahsen: beelden niet delen. Merve: groepsvideo's niet, koppel wel.</li><li>Films rond 45 seconden houden.</li><li>Momentregistratie = licht bewerkte ruwe beelden, niet cinematic.</li></ul></div></details>
+<details><summary>Huisstijl</summary><div class="in"><div class="swatches"><span class="sw"><i style="background:#0F0F0F"></i>Zwart #0F0F0F</span><span class="sw"><i style="background:#FFFFFF"></i>Wit #FFFFFF</span><span class="sw"><i style="background:#E8DFD6"></i>Zand #E8DFD6</span><span class="sw"><i style="background:#5A3E2C"></i>Bruin (logo)</span></div><p>Lettertypes: Lora (titels) + Poppins (tekst). Logo op bruin voor Love Stories, op zwart voor Business.</p></div></details>
+<details><summary>Bedrijfsgegevens</summary><div class="in"><table>
+<tr><td>Onderneming</td><td>Hatice Kulak (eenmanszaak) · Prime Moments</td></tr>
+<tr><td>Ondernemingsnr.</td><td><span id="c-ond">${CO.ond}</span><button class="copy" data-copy="c-ond">kopieer</button></td></tr>
+<tr><td>IBAN</td><td><span id="c-iban">${CO.iban}</span><button class="copy" data-copy="c-iban">kopieer</button> · BIC ${CO.bic}</td></tr>
+<tr><td>Business WhatsApp</td><td><span id="c-tel">${CO.tel}</span><button class="copy" data-copy="c-tel">kopieer</button></td></tr>
+<tr><td>Mail</td><td><span id="c-mail">${CO.mail}</span><button class="copy" data-copy="c-mail">kopieer</button></td></tr>
+<tr><td>Website</td><td><a href="https://primemoments.live" target="_blank" rel="noopener" style="color:var(--accent)">primemoments.live</a></td></tr>
+<tr><td>Instagram</td><td>@primemoments.be · @primemomentsbusiness.be</td></tr>
+<tr><td>Kantoor</td><td>Het Dépôt, Vissersstraat 1, Hasselt · op afspraak</td></tr></table></div></details>
+</div>`;
+
+/* ================= team ================= */
+const teamChips=b=>(b.team||[]).map(id=>S.team.find(m=>m.id===id)).filter(Boolean).map(m=>pill(m.code||m.naam,"p-team")).join("");
+function hours(x){if(!x.start||!x.eind)return 0;const p=t=>{const [h,m]=t.split(":").map(Number);return h*60+(m||0)};let d=p(x.eind)-p(x.start);if(d<=0)d+=1440;return Math.round(d/6)/10}
+function genKey(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";const r=new Uint8Array(12);crypto.getRandomValues(r);const c=[...r].map(x=>A[x%A.length]).join("");return c.slice(0,4)+"-"+c.slice(4,8)+"-"+c.slice(8)}
+const shiftsOf=m=>sorted(S.bookings.filter(b=>(b.team||[]).includes(m.id)&&b.status!=="Geannuleerd"));
+V.team=()=>{const ym=iso(now()).slice(0,7);const T=[...S.team].sort((a,b)=>(b.actief!==false)-(a.actief!==false)||(a.code||a.naam).localeCompare(b.code||b.naam));
+  return `<div class="ph"><div><div class="eyebrow">Wie er mee filmt</div><h1>Team</h1></div><div class="acts"><button class="btn" data-new="team">+ Teamlid</button></div></div>
+  ${T.length?T.map(m=>{const sh=shiftsOf(m);const up=sh.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)>=0);const mo=sh.filter(b=>(b.datum||"").startsWith(ym));
+   return `<section class="block"><h2>${esc(m.naam)}${m.code&&m.code!==m.naam?` <span style="font-family:var(--body);font-size:13px;color:var(--muted);font-weight:500">${esc(m.code)}</span>`:""} <span class="meta">${esc(m.rol||"")}${m.actief===false?" · niet actief":""}</span></h2>
+    <div class="tiles" style="margin-bottom:10px"><div class="tile"><div class="k">Komende shoots</div><div class="v">${up.length}</div></div><div class="tile"><div class="k">${cap(MAANDL[now().getMonth()])}</div><div class="v">${mo.reduce((a,b)=>a+hours(b),0)} u</div><div class="s">${mo.length} shoots</div></div><div class="tile"><div class="k">Toegang</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-invite="${m.id}">Uitnodiging</button><button class="btn ghost sm" data-edit="team:${m.id}">Bewerk</button></div></div></div>
+    ${up.length?`<div class="list">${up.slice(0,6).map(b=>rowB(b,{noFlags:1})).join("")}</div>${up.length>6?`<p class="note">+ ${up.length-6} later</p>`:""}`:`<div class="empty">Nog geen shoots toegewezen. Open een boeking en vink ${esc(m.code||m.naam)} aan bij Team.</div>`}</section>`}).join(""):`<div class="empty">Nog geen teamleden.</div>`}
+  <section class="block"><h2>Team-app</h2><div class="list"><div class="kv" style="grid-template-columns:1fr">
+   <span>1. Open een boeking en vink bij <b>Team</b> aan wie er mee moet. Praktische info zet je bij <b>Notitie voor het team</b>.</span>
+   <span>2. Tik op <b>Uitnodiging</b> en stuur het bericht via WhatsApp: daarin staan de link naar de team-app en de teamcode.</span>
+   <span>3. In de team-app tikken ze op hun naam en zien ze hun shoots en uren. Geen prijzen, geen facturen, geen telefoonnummers van klanten.</span>
+  </div></div><p class="note">Teamcode: <b>${esc(S.settings.teamCode||"–")}</b> · <a href="${TEAM_URL}" target="_blank" rel="noopener">open de team-app</a></p></section>`};
+function openInvite(id){const m=S.team.find(x=>x.id===id);if(!m)return;const code=S.settings.teamCode||"–";
+  const msg=`Hoi ${(m.naam||"").split(" ")[0]}! Vanaf nu vind je je planning voor Prime Moments in onze team-app.\n\n1. Open: ${TEAM_URL}\n2. Geef de teamcode in: ${code}\n3. Tik op je naam\n\nTip: zet de pagina op je beginscherm (Delen › Zet op beginscherm), dan werkt ze als een app. – Hatice`;
+  const {sc,close}=openSheet(`<h3>Uitnodiging voor ${esc(m.naam)}</h3><p class="sub">Eén teamcode voor het hele team. Wie de code heeft, ziet de planning (zonder prijzen).</p>
+   <div class="codebox">${esc(code)}</div>
+   <p class="note" style="margin:14px 0 6px">Bericht om te sturen</p><div class="msgbox" id="inv-msg">${esc(msg)}</div>
+   <div class="actions"><div><button class="btn" data-copymsg>Kopieer bericht</button><a class="btn ghost" href="${TEAM_URL}" target="_blank" rel="noopener">Open team-app</a></div><div><button class="btn danger" data-rekey>Nieuwe teamcode</button><button class="btn ghost" data-close>Sluit</button></div></div>`);
+  let armed=false;
+  sc.addEventListener("click",async e=>{
+    if(e.target.closest("[data-copymsg]")){const el=$("#inv-msg");try{await navigator.clipboard.writeText(el.textContent);toast("Gekopieerd, plak het in WhatsApp")}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Geselecteerd, kopieer met je toetsenbord")}}
+    const rk=e.target.closest("[data-rekey]");if(rk){if(!armed){armed=true;rk.textContent="Iedereen moet dan de nieuwe code ingeven. Zeker?";return}
+      const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";const r=new Uint8Array(6);crypto.getRandomValues(r);const nc=[...r].map(x=>A[x%A.length]).join("");
+      try{await db.doc("settings/team").set({teamCode:nc});S.settings.teamCode=nc;toast("Nieuwe teamcode: "+nc);close();setTimeout(()=>openInvite(id),300)}catch(_){toast("Bewaren mislukt")}}
+  })}
+/* --- sync bookings -> crew/<code>/... (owner only) --- */
+let syncing=false,syncAgain=false,syncT=null;const synced={};
+const scheduleSync=()=>{};
+function shiftPayload(b,m){const o={datum:b.datum||"",start:b.start||"",eind:b.eind||"",klant:b.klant||"",event:b.event||"",locatie:b.locatie||"",status:b.status||"",rol:m.rol||"",notitie:b.teamNotitie||"",uren:hours(b)};return o}
+async function syncCrew(){if(syncing){syncAgain=true;return}syncing=true;
+  try{for(const m of S.team){if(!m.sleutel)continue;const base=`crew/${m.sleutel}`;
+     const info={naam:m.naam||"",code:m.code||"",rol:m.rol||"",actief:m.actief!==false};
+     const want={};if(m.actief!==false)shiftsOf(m).forEach(b=>want[b.id]=shiftPayload(b,m));
+     if(!synced[m.sleutel]){const snap=await db.collection(base+"/shifts").get();synced[m.sleutel]={};snap.docs.forEach(d=>synced[m.sleutel][d.id]=JSON.stringify(d.data()));const i=await db.doc(base+"/info/me").get();synced[m.sleutel]._info=i.exists?JSON.stringify(i.data()):null}
+     const have=synced[m.sleutel];
+     if(have._info!==JSON.stringify(info)){await db.doc(base+"/info/me").set(info);have._info=JSON.stringify(info)}
+     for(const [bid,p] of Object.entries(want)){const j=JSON.stringify(p);if(have[bid]!==j){await db.doc(`${base}/shifts/${bid}`).set(p);have[bid]=j}}
+     for(const bid of Object.keys(have)){if(bid==="_info")continue;if(!want[bid]){await db.doc(`${base}/shifts/${bid}`).delete();delete have[bid]}}
+  }}catch(err){console.warn("team sync",err&&err.code)}
+  syncing=false;if(syncAgain){syncAgain=false;scheduleSync()}}
+async function clearCrew(key){if(!key||!db)return;try{const snap=await db.collection(`crew/${key}/shifts`).get();for(const d of snap.docs)await db.doc(`crew/${key}/shifts/${d.id}`).delete();await db.doc(`crew/${key}/info/me`).delete();delete synced[key]}catch(_){}}
+/* --- crew view (what team members see) --- */
+const CREW={key:null,info:null,shifts:[],infoLoaded:false,shiftsLoaded:false,un:[]};
+function watchCrew(key){CREW.un.forEach(f=>{try{f()}catch(_){}});Object.assign(CREW,{key,info:null,shifts:[],infoLoaded:false,shiftsLoaded:false,un:[]});if(!key||!db)return render();
+  CREW.un.push(db.doc(`crew/${key}/info/me`).onSnapshot(s=>{CREW.info=s.exists?s.data():null;CREW.infoLoaded=true;rerender()},()=>{CREW.infoLoaded=true;rerender()}));
+  CREW.un.push(db.collection(`crew/${key}/shifts`).onSnapshot(s=>{CREW.shifts=s.docs.map(d=>Object.assign({id:d.id},d.data()));CREW.shiftsLoaded=true;rerender()},()=>{CREW.shiftsLoaded=true;rerender()}))}
+const LSK="pm-team-code";const lsGet=()=>{try{return localStorage.getItem(LSK)}catch(_){return null}};const lsSet=v=>{try{v?localStorage.setItem(LSK,v):localStorage.removeItem(LSK)}catch(_){}};
+function crewPage(){const prev=UI.mode==="owner"&&UI.preview;const m=prev?S.team.find(x=>x.id===UI.preview):null;
+  const top=`<div class="crew-top"><span class="logo">PRIMEMOMENTS<i></i></span><span class="eyebrow" style="margin:0">Team</span></div>`;
+  const pb=prev?`<div class="prevbar"><span>Voorbeeld: zo ziet <b>${esc(m?m.naam:"")}</b> zijn planning.</span><button class="btn sm" data-endpreview>Terug naar je HQ</button></div>`:"";
+  if(!db)return `<div class="crew-wrap">${top}<div class="entry"><h2 style="font-size:22px">Log in om je planning te zien</h2><p class="note">Open deze pagina via claude.ai terwijl je ingelogd bent met je Claude-account.</p></div></div>`;
+  if(!CREW.key)return `<div class="crew-wrap">${top}<form class="entry" data-crewcode><h2 style="font-size:24px">Welkom bij het Prime Moments-team</h2><p class="note">Geef de persoonlijke code in die je van Hatice kreeg. Je hoeft dit maar één keer te doen op dit toestel.</p><label for="crewcode" class="eyebrow" style="display:block;margin-top:16px">Jouw code</label><input id="crewcode" autocomplete="off" placeholder="XXXX-XXXX-XXXX" required><button class="btn">Toon mijn planning</button>${UI.crewErr?`<p class="note" style="color:var(--bad)">${esc(UI.crewErr)}</p>`:""}</form></div>`;
+  if(!CREW.infoLoaded||!CREW.shiftsLoaded)return `<div class="crew-wrap">${top}${pb}<div class="empty">Je planning laadt…</div></div>`;
+  if(!CREW.info){if(!prev){lsSet(null);UI.crewErr="Deze code klopt niet of werkt niet meer. Vraag Hatice om een nieuwe.";CREW.key=null;return crewPage()}return `<div class="crew-wrap">${top}${pb}<div class="empty">Nog niets gesynchroniseerd voor dit teamlid. Wacht enkele seconden.</div></div>`}
+  const I=CREW.info;const all=sorted(CREW.shifts);const up=all.filter(x=>daysTo(x.datum)===null||daysTo(x.datum)>=0);const past=all.filter(x=>daysTo(x.datum)!==null&&daysTo(x.datum)<0).reverse();const nx=up.find(x=>x.datum);
+  const months={};all.forEach(x=>{if(!x.datum)return;const k=x.datum.slice(0,7);(months[k]=months[k]||{n:0,u:0});months[k].n++;months[k].u+=+x.uren||0});
+  const card=x=>{const d=pd(x.datum);return `<div class="row" style="cursor:default"><div class="date${d?"":" none"}">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}</span>`:`<b>?</b><span>datum</span>`}</div><div class="main-t"><div class="t">${d?cap(d.toLocaleDateString("nl-BE",{weekday:"long"}))+" · ":""}${x.start?esc(x.start)+(x.eind?"–"+esc(x.eind):""):"uur volgt"}</div><div class="d">${esc(x.klant)}${x.event?" · "+esc(x.event):""}</div><div class="d">${x.locatie?"📍 ":""}${esc(x.locatie||"Locatie volgt")}</div>${x.notitie?`<div class="d" style="color:var(--fg);margin-top:4px">${esc(x.notitie)}</div>`:""}<div class="pills">${pill(x.rol||I.rol,"p-team")}${x.status==="Gereserveerd"?pill("Nog niet zeker","p-warn"):""}</div></div><div class="amt">${x.uren?x.uren+" u":""}</div></div>`};
+  return `<div class="crew-wrap">${top}${pb}
+   <div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><h1 style="font-size:30px;margin-bottom:18px">Hoi ${esc(I.naam||"")}</h1>
+   ${nx?`<div class="next" style="cursor:default"><div class="big">${daysTo(nx.datum)===0?"Vandaag":daysTo(nx.datum)}${daysTo(nx.datum)===0?"":`<small>${daysTo(nx.datum)===1?"dag":"dagen"}</small>`}</div><div><div class="lbl">Je volgende shoot · ${pd(nx.datum).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?nx.start+(nx.eind?"–"+nx.eind:""):"",nx.locatie].filter(Boolean).map(esc).join(" · ")}</div></div></div>`:""}
+   <section class="block"><h2>Jouw komende shoots <span class="meta">${up.length}</span></h2>${up.length?`<div class="list">${up.map(card).join("")}</div>`:`<div class="empty">Er staan geen shoots voor jou gepland.</div>`}</section>
+   <section class="block"><h2>Urenoverzicht</h2>${Object.keys(months).length?`<div class="tbl-wrap"><table class="tbl" style="min-width:0"><thead><tr><th>Maand</th><th>Shoots</th><th>Uren</th></tr></thead><tbody>${Object.keys(months).sort().reverse().map(k=>`<tr><td>${cap(MAANDL[+k.slice(5,7)-1])} ${k.slice(0,4)}</td><td>${months[k].n}</td><td>${Math.round(months[k].u*10)/10} u</td></tr>`).join("")}</tbody></table></div><p class="note">Uren volgens de geplande start- en einduren.</p>`:`<div class="empty">Nog geen uren.</div>`}</section>
+   ${past.length?`<section class="block"><h2>Voorbije shoots <span class="meta">${past.length}</span></h2><div class="list">${past.slice(0,10).map(card).join("")}</div></section>`:""}
+   ${prev?"":`<p class="note"><button class="btn ghost sm" data-crewlogout>Andere code ingeven</button></p>`}</div>`}
+
+/* ================= forms ================= */
+const STAT=["Gereserveerd","Bevestigd","Afgerond","Geannuleerd"];
+const FORMS={
+ bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["status","Status","select",0,STAT],["start","Van","time"],["eind","Tot","time"],["categorie","Categorie","select",0,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","text"],["locatie","Locatie","text",1],
+  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["foto","Foto (€, telt niet mee)","number"],["betaling","Betaalstatus","select",0,["Open","Voorschot","Betaald","Te checken"]],["ontvangen","Al ontvangen (€)","number"],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
+  ["_","Contact & team","sec"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["levering","Levering","select",0,["Nog te filmen","In montage","Afgeleverd"]],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["notitie","Notities (alleen voor jou)","textarea",1]]},
+ team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
+ leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via"]],["event","Event","text"],["datum","Gevraagde datum","date"],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
+ tasks:{t:"Taak",f:[["titel","Taak","text",1],["deadline","Tegen","date"],["klaar","Klaar","check"],["notitie","Notitie","textarea",1]]},
+ partners:{t:"Partner",f:[["naam","Naam","text",1],["rol","Rol","select",0,["Fotograaf","Dronepiloot","Second shooter","Locatie","Partner"]],["type","Samenwerking","text"],["contact","Contact","text",1],["notitie","Notities","textarea",1]]},
+ recurring:{t:"Vaste klant",f:[["naam","Naam","text",1],["bedrag","Bedrag per maand (€)","number"],["status","Status","select",0,["Actief","In afwachting","Gestopt"]],["sinds","Sinds","date"],["notitie","Afspraken","textarea",1]]},
+ companies:{t:"Bedrijf",f:[["naam","Officiële naam","text",1],["handelsnaam","Handelsnaam","text"],["btw","Btw-nummer","text"],["adres","Adres","text",1],["contact","Contactpersoon","text"],["mail","E-mail","text"],["peppol","Peppol","select",0,["?","Ja","Nee"]],["notitie","Notities","textarea",1]]},
+ purchases:{t:"Aankoop",f:[["datum","Datum","date"],["leverancier","Leverancier","text"],["omschrijving","Omschrijving","text",1],["factuurnr","Factuurnr.","text"],["categorie","Categorie","select",0,PCAT],["bedrag","Bedrag in € (incl. btw)","number"],["valuta","Valuta factuur","select",0,["EUR","USD","GBP"]],["bedragOrig","Bedrag in valuta factuur","number"],["soort","Soort","select",0,["Kost","Investering"]],["jaren","Afschrijven over (jaren)","number"],["zakelijk","Zakelijk gebruik (%)","number"],["bestand","Bestandsnaam","text",1],["notitie","Notities","textarea",1]]},
+ inventory:{t:"Materiaal",f:[["item","Item","text",1],["merk","Merk","text"],["categorie","Categorie","text"],["aankoopdatum","Aankoopdatum","date"],["prijs","Prijs (€)","number"],["leverancier","Leverancier","text"],["serienummer","Serienummer","text"],["garantieTot","Garantie tot","date"],["staat","Staat","select",0,["In gebruik","In herstelling","Verkocht","Kwijt"]],["notitie","Notities","textarea",1]]},
+ blocks:{t:"Niet beschikbaar",f:[["titel","Titel (bv. Verlof)","text",1],["van","Van","date"],["tot","Tot en met","date"],["notitie","Notitie","textarea",1]]},
+ invoices:{t:"Factuur",f:[["type","Soort","select",0,["Factuur","Voorschotfactuur","Creditnota"]],["nummer","Factuurnummer","text"],["datum","Factuurdatum","date"],["vervaldatum","Vervaldatum","date"],["opdracht","Datum opdracht","date"],["status","Status","select",0,["Open","Betaald"]],["betaaldOp","Betaald op","date"],
+  ["_","Klant","sec"],["klant","Naam klant","text",1],["klantInfo","Adres, mail (één per regel)","textarea",1],["btw","Btw-nummer klant (bedrijf)","text"],["taal","Taal","select",0,["NL","FR","EN"]],
+  ["_","Inhoud","sec"],["regelsTxt","Regels: omschrijving | bedrag (één per regel)","textarea",1],["korting","Korting (€)","number"],["extra","Extra vermelding","textarea",1]]}
+};
+function openSheet(html,wide){const sc=document.createElement("div");sc.className="scrim";sc.innerHTML=`<div class="sheet${wide?" wide":""}" role="dialog" aria-modal="true">${html}</div>`;document.body.appendChild(sc);
+  const close=()=>{sc.remove();document.removeEventListener("keydown",esc_)};const esc_=e=>{if(e.key==="Escape")close()};document.addEventListener("keydown",esc_);
+  sc.addEventListener("click",e=>{if(e.target===sc||e.target.closest("[data-close]"))close()});return {sc,close}}
+function openForm(col,id,preset){
+  const F=FORMS[col];const src=id?S[col].find(x=>x.id===id):null;if(id&&!src)return;
+  const it=Object.assign({},src||preset||{});
+  if(col==="invoices")it.regelsTxt=(it.regels||[]).map(r=>`${r.oms}${r.detail?" — "+r.detail:""} | ${r.bedrag}`).join("\n");
+  const html=`<form><h3>${id?F.t+" bewerken":"Nieuwe "+F.t.toLowerCase()}</h3><div class="fgrid">${F.f.map(([k,l,t,full,opt])=>{
+    if(t==="sec")return `<div class="fsec">${l}</div>`;
+    const v=it[k]??"";const fid=`f-${col}-${k}`;
+    if(t==="select")return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><select id="${fid}" name="${k}">${opt.map(o=>`<option value="${esc(o)}"${o===v?" selected":""}>${esc(o||"–")}</option>`).join("")}</select></div>`;
+    if(t==="textarea")return `<div class="f full"><label for="${fid}">${l}</label><textarea id="${fid}" name="${k}">${esc(v)}</textarea></div>`;
+    if(t==="team")return `<div class="f full"><label>${l}</label><div class="teamchecks">${S.team.filter(m=>m.actief!==false||(v||[]).includes(m.id)).map(m=>`<label><input type="checkbox" name="team" value="${esc(m.id)}" ${(v||[]).includes(m.id)?"checked":""}>${esc(m.code||m.naam)}${m.code&&m.naam&&m.naam!==m.code?` <span style="color:var(--muted)">${esc(m.naam)}</span>`:""}</label>`).join("")||`<span class="hint">Voeg eerst teamleden toe bij Team.</span>`}</div></div>`;
+    if(t==="check")return `<div class="f check full"><input type="checkbox" id="${fid}" name="${k}" ${v?"checked":""}><label for="${fid}">${l}</label></div>`;
+    return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><input id="${fid}" name="${k}" type="${t}" value="${esc(v)}"${t==="number"?' inputmode="decimal" step="any"':""}></div>`}).join("")}</div>
+   <div class="actions"><div>${id&&canWrite?`<button type="button" class="btn danger" data-del>Verwijder</button>`:""}${col==="leads"&&id&&canWrite?`<button type="button" class="btn ghost" data-tobook>Maak boeking</button>`:""}${col==="bookings"&&id&&canWrite?`<button type="button" class="btn ghost" data-toinv>Maak factuur</button>`:""}</div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button class="btn">Bewaar</button>`:""}</div></div></form>`;
+  const {sc,close}=openSheet(html);const form=sc.querySelector("form");let armed=false;
+  if(col==="invoices"&&!id){const d=form.elements.datum,v=form.elements.vervaldatum;d.addEventListener("change",()=>{v.value=addDays(d.value,7)})}
+  sc.addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]");if(del){if(!armed){armed=true;del.textContent="Zeker? Tik opnieuw";return}remove(col,id).then(close)}
+    if(e.target.closest("[data-tobook]")){close();openForm("bookings",null,{klant:it.naam,event:it.event,datum:it.datum,video:it.prijs,status:"Gereserveerd",betaling:"Open",levering:"Nog te filmen",contact:it.contact,kanaal:it.kanaal,notitie:it.notitie,categorie:"Love Stories",_lead:id})}
+    if(e.target.closest("[data-toinv]")){close();invFromBooking(it)}});
+  form.addEventListener("submit",async e=>{e.preventDefault();const o={};F.f.forEach(([k,,t])=>{if(t==="sec")return;if(t==="team"){o[k]=[...form.querySelectorAll('input[name="team"]:checked')].map(x=>x.value);return}const el=form.elements[k];o[k]=t==="check"?el.checked:t==="number"?(el.value===""?null:+el.value):el.value.trim()});
+    const first=F.f.find(x=>x[2]!=="sec"&&x[2]!=="select")[0];if(!o[first]){form.elements[first].focus();toast("Vul eerst "+F.f.find(x=>x[0]===first)[1].toLowerCase()+" in");return}
+    if(col==="invoices"){o.regels=o.regelsTxt.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split("|");const amt=p.length>1?+(p.pop().replace(/[€\s]/g,"").replace(",",".")):0;const [oms,detail]=p.join("|").split(" — ");return{oms:oms.trim(),detail:(detail||"").trim(),bedrag:amt||0}});delete o.regelsTxt}
+    if(col==="team"&&!id)o.sleutel=genKey();
+    const ok=await save(col,id,o);if(ok&&preset&&preset._lead){await db.doc("leads/"+preset._lead).update({status:"Geboekt"}).catch(()=>{})}
+    if(ok)close()});
+  setTimeout(()=>form.querySelector("input:not([type=checkbox]),select")?.focus(),60);
+}
+function invFromBooking(b){const co=S.companies.find(c=>(c.naam+" "+(c.handelsnaam||"")).toLowerCase().includes((b.klant||"").toLowerCase().split(" ")[0]));
+  const vs=b.status!=="Afgerond"&&daysTo(b.datum)>0;const amt=vs?Math.round(vid(b)*0.2):Math.max(0,vid(b)-(+b.ontvangen||0));
+  openForm("invoices",null,{type:vs?"Voorschotfactuur":"Factuur",nummer:nextInvNr(now().getFullYear()),datum:iso(now()),vervaldatum:addDays(iso(now()),7),opdracht:b.datum,status:"Open",klant:co?co.naam+(co.handelsnaam?` (${co.handelsnaam})`:""):b.klant,klantInfo:co?[co.adres,co.mail].filter(Boolean).join("\n"):"Particulier",btw:co?co.btw:"",taal:"NL",regels:[{oms:(vs?"Voorschot – ":"")+(b.event||b.pakket||"Videografie")+(b.datum?" "+dShort(b.datum):""),detail:"Cinematic film + highlightfilm.",bedrag:amt}],_booking:b.id})}
+
+/* ================= invoice document ================= */
+function invoiceHTML(i){const T={NL:{inv:i.type||"Factuur",nr:"Factuurnummer",d:"Factuurdatum",v:"Vervaldatum",o:"Datum opdracht",van:"Van",aan:"Factuur aan",oms:"Omschrijving",n:"Aantal",p:"Prijs",b:"Bedrag",sub:"Subtotaal",k:"Korting",btw:"Btw (0% – vrijgesteld)",tb:"Te betalen",bg:"Betalingsgegevens",ben:"Begunstigde",hn:"Handelsnaam",med:"Mededeling",verm:"Vermeldingen",vrij:"Bijzondere vrijstellingsregeling kleine ondernemingen – btw niet van toepassing (art. 56bis WBTW).",pay:`Gelieve het bedrag te betalen vóór ${dShort(i.vervaldatum)}, met mededeling „Factuur ${i.nummer}”.`,dank:"Dank je voor je vertrouwen in Prime Moments.",fac:"Factuur"},
+   FR:{inv:i.type==="Voorschotfactuur"?"Facture d'acompte":i.type==="Creditnota"?"Note de crédit":"Facture",nr:"Numéro",d:"Date",v:"Échéance",o:"Date de la prestation",van:"De",aan:"Facturé à",oms:"Description",n:"Qté",p:"Prix",b:"Montant",sub:"Sous-total",k:"Remise",btw:"TVA (0% – exonérée)",tb:"À payer",bg:"Coordonnées bancaires",ben:"Bénéficiaire",hn:"Nom commercial",med:"Communication",verm:"Mentions",vrij:"Régime particulier de franchise des petites entreprises – TVA non applicable (art. 56bis CTVA).",pay:`Merci de payer avant le ${dShort(i.vervaldatum)} avec la communication « Facture ${i.nummer} ».`,dank:"Merci pour votre confiance en Prime Moments.",fac:"Facture"},
+   EN:{inv:i.type==="Voorschotfactuur"?"Deposit invoice":i.type==="Creditnota"?"Credit note":"Invoice",nr:"Invoice number",d:"Invoice date",v:"Due date",o:"Date of service",van:"From",aan:"Bill to",oms:"Description",n:"Qty",p:"Price",b:"Amount",sub:"Subtotal",k:"Discount",btw:"VAT (0% – exempt)",tb:"Amount due",bg:"Payment details",ben:"Beneficiary",hn:"Trading name",med:"Reference",verm:"Notes",vrij:"Special exemption scheme for small businesses – VAT not applicable (art. 56bis Belgian VAT Code).",pay:`Please pay before ${dShort(i.vervaldatum)} with reference "Invoice ${i.nummer}".`,dank:"Thank you for trusting Prime Moments.",fac:"Invoice"}}[i.taal||"NL"];
+  const R=i.regels||[];const sub=R.reduce((a,r)=>a+(+r.bedrag||0),0);const tot=invTotal(i);const e2=n=>"€ "+(+n).toLocaleString("nl-BE",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const lab='font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#7A6C5F;margin-bottom:3px';
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid #0F0F0F;padding-bottom:16px">
+   <div><div style="font-family:Lora,Georgia,serif;font-size:22px;font-weight:600;letter-spacing:.06em">PRIME MOMENTS</div><div style="font-size:9.5px;letter-spacing:.2em;color:#7A6C5F">CINEMATIC VIDEOGRAPHY · LIMBURG</div></div>
+   <div style="font-family:Lora,Georgia,serif;font-size:24px;font-weight:600">${esc(T.inv)}</div></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;background:#F4EEE7;padding:12px 14px;margin:16px 0;border-radius:4px">
+   <div><div style="${lab}">${T.nr}</div><b>${esc(i.nummer)}</b></div><div><div style="${lab}">${T.d}</div>${dShort(i.datum)}</div><div><div style="${lab}">${T.v}</div>${dShort(i.vervaldatum)}</div><div><div style="${lab}">${T.o}</div>${i.opdracht?dShort(i.opdracht):"–"}</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px">
+   <div><div style="${lab}">${T.van}</div><b>${CO.naam}</b><br>${CO.eig}<br>${CO.adres}<br>${CO.plaats}<br>Ondernemingsnr. ${CO.ond}<br>${CO.mail}<br>${CO.tel}</div>
+   <div><div style="${lab}">${T.aan}</div><b>${esc(i.klant)}</b><br>${(i.klantInfo||"").split("\n").map(esc).join("<br>")}${i.btw?`<br>Btw ${esc(i.btw)}`:""}</div></div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid #0F0F0F">${[T.oms,T.n,T.p,T.b].map((h,k)=>`<th style="${lab};text-align:${k?"right":"left"};padding:6px 0">${h}</th>`).join("")}</tr></thead>
+   <tbody>${R.map(r=>`<tr style="border-bottom:1px solid #E8DFD6"><td style="padding:9px 0"><b style="font-weight:500">${esc(r.oms)}</b>${r.detail?`<br><span style="color:#7A6C5F;font-size:11px">${esc(r.detail)}</span>`:""}</td><td style="text-align:right">1</td><td style="text-align:right">${e2(r.bedrag)}</td><td style="text-align:right">${e2(r.bedrag)}</td></tr>`).join("")}</tbody></table>
+  <div style="display:flex;justify-content:flex-end;margin-top:12px"><div style="min-width:260px">
+   <div style="display:flex;justify-content:space-between;padding:4px 0"><span>${T.sub}</span><span>${e2(sub)}</span></div>
+   ${+i.korting?`<div style="display:flex;justify-content:space-between;padding:4px 0"><span>${T.k}</span><span>– ${e2(i.korting)}</span></div>`:""}
+   <div style="display:flex;justify-content:space-between;padding:4px 0"><span>${T.btw}</span><span>${e2(0)}</span></div>
+   <div style="display:flex;justify-content:space-between;align-items:center;background:#0F0F0F;color:#fff;padding:10px 12px;margin-top:6px;border-radius:3px"><span style="letter-spacing:.12em;text-transform:uppercase;font-size:11px">${T.tb}</span><b style="font-size:16px">${e2(tot)}</b></div></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px;padding-top:14px;border-top:1px solid #E8DFD6;font-size:11px">
+   <div><div style="${lab}">${T.bg}</div>${T.ben}: Hatice Kulak<br>${T.hn}: Prime Moments<br>IBAN ${CO.iban}<br>BIC ${CO.bic}<br>${T.med}: ${T.fac} ${esc(i.nummer)}</div>
+   <div><div style="${lab}">${T.verm}</div>${T.vrij}<br><br>${T.pay}${i.extra?`<br><br>${esc(i.extra).replace(/\n/g,"<br>")}`:""}</div></div>
+  <div style="text-align:center;margin-top:24px;color:#7A6C5F;font-size:10.5px">${T.dank}<br>${CO.naam} · ${CO.eig} · ${CO.adres}, ${CO.plaats} · ${CO.ond} · ${CO.web}</div>`}
+function openInvoice(id){const i=S.invoices.find(x=>x.id===id);if(!i)return;const st=invStatus(i);
+  const {sc,close}=openSheet(`<h3>${esc(i.type||"Factuur")} ${esc(i.nummer)}</h3><p class="sub">${esc(i.klant)} · ${eur2(invTotal(i))} · ${pill(st)}${i.betaaldOp?" · betaald op "+dl_(i.betaaldOp):""}</p>
+   <div class="paper-wrap"><div class="paper">${invoiceHTML(i)}</div></div>
+   <div class="actions"><div>${canWrite&&st!=="Betaald"?`<button class="btn" data-paid>Markeer als betaald</button>`:""}${canWrite&&st==="Betaald"?`<button class="btn ghost" data-unpaid>Toch niet betaald</button>`:""}${dl?`<button class="btn ghost" data-dlinv>Bewaar als bestand</button>`:""}</div><div>${canWrite?`<button class="btn ghost" data-editinv>Bewerk</button>`:""}<button class="btn ghost" data-close>Sluit</button></div></div>
+   <p class="note">Bewaar als bestand geeft een .html-factuur. Open die in je browser en kies Afdrukken › Bewaar als pdf.</p>`,true);
+  sc.addEventListener("click",async e=>{
+    if(e.target.closest("[data-paid]")){await save("invoices",id,{status:"Betaald",betaaldOp:iso(now())});close()}
+    if(e.target.closest("[data-unpaid]")){await save("invoices",id,{status:"Open",betaaldOp:""});close()}
+    if(e.target.closest("[data-editinv]")){close();openForm("invoices",id)}
+    if(e.target.closest("[data-dlinv]")){const doc=`<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>${esc(i.type||"Factuur")} ${esc(i.nummer)} – ${esc(i.klant)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600&family=Poppins:wght@400;500;600&display=swap"><style>@page{size:A4;margin:16mm}body{margin:0;background:#fff;color:#0F0F0F;font-family:Poppins,system-ui,sans-serif;font-size:12px;line-height:1.5}.p{max-width:760px;margin:24px auto;padding:0 8px}</style></head><body><div class="p">${invoiceHTML(i)}</div></body></html>`;
+      try{await dl.save({filename:`${i.type==="Voorschotfactuur"?"Voorschotfactuur":"Factuur"}_${i.nummer}_${(i.klant||"").replace(/[^A-Za-z0-9]+/g,"")}.html`,data:doc});toast("Bewaard")}catch(err){if(err&&err.code!=="declined")toast("Bewaren lukt hier niet")}}
+  })}
+
+/* ================= client sheet ================= */
+function openClient(n){const o=clientIndex()[n];if(!o)return;const tot=o.bookings.reduce((a,b)=>a+vid(b),0);
+  const {sc}=openSheet(`<h3>${esc(n)}</h3><p class="sub">${o.bookings.length} boekingen · ${eur(tot)} video${o.contact?" · "+esc(o.contact):""}</p>
+  ${o.bookings.length?`<div class="list" style="margin-bottom:14px">${sorted(o.bookings).map(b=>rowB(b)).join("")}</div>`:""}
+  ${o.invoices.length?`<div class="list">${o.invoices.map(rowInv).join("")}</div>`:""}
+  <div class="actions"><div><button class="btn ghost" data-newb-for="${esc(n)}">+ Nieuwe boeking</button></div><div><button class="btn ghost" data-close>Sluit</button></div></div>`,true);
+  sc.addEventListener("click",e=>{const t=e.target.closest("[data-edit],[data-inv],[data-newb-for]");if(!t)return;sc.remove();if(t.dataset.edit){const [c,id]=t.dataset.edit.split(":");openForm(c,id)}else if(t.dataset.inv)openInvoice(t.dataset.inv);else openForm("bookings",null,{klant:n,status:"Gereserveerd",betaling:"Open",levering:"Nog te filmen",categorie:"Love Stories"})})}
+
+function openNew(){const items=[["bookings","Boeking","Datum vastleggen"],["leads","Aanvraag","Nieuwe DM of vraag"],["invoices","Factuur","Of voorschotfactuur"],["purchases","Aankoop","Kost of investering"],["tasks","Taak","Iets om op te volgen"],["blocks","Niet beschikbaar","Verlof of geblokkeerd"],["inventory","Materiaal","Nieuw toestel"],["partners","Partner","Fotograaf, drone…"]];
+  const {sc,close}=openSheet(`<h3>Nieuw</h3><div class="newmenu">${items.map(([c,t,s])=>`<button data-n="${c}"><b>${t}</b><span>${s}</span></button>`).join("")}</div><div class="actions"><div></div><div><button class="btn ghost" data-close>Sluit</button></div></div>`);
+  sc.addEventListener("click",e=>{const b=e.target.closest("[data-n]");if(b){close();newOf(b.dataset.n)}})}
+function newOf(c,extra){const P={bookings:{status:"Gereserveerd",categorie:"Love Stories",betaling:"Open",levering:"Nog te filmen"},leads:{status:"Nieuw",ontvangen:iso(now())},invoices:{type:"Factuur",nummer:nextInvNr(now().getFullYear()),datum:iso(now()),vervaldatum:addDays(iso(now()),7),status:"Open",taal:"NL",klantInfo:"Particulier"},purchases:{datum:iso(now()),valuta:"EUR",soort:"Kost",jaren:3,zakelijk:100,categorie:"Camera & materiaal"},tasks:{},blocks:{titel:"Verlof"},inventory:{staat:"In gebruik",aankoopdatum:iso(now())},partners:{rol:"Fotograaf"},recurring:{status:"Actief"},companies:{peppol:"?"},team:{rol:"Camera",actief:true}}[c]||{};
+  openForm(c,null,Object.assign({},P,extra||{}))}
+
+/* ================= data ================= */
+async function save(col,id,o){
+  if(!db){toast("Opslaan lukt niet: open je HQ via claude.ai");return false}
+  try{ if(id){await db.doc(col+"/"+id).update(o)} else {o.created=new Date().toISOString();await db.collection(col).add(o)} toast("Bewaard");return true}
+  catch(e){toast(e&&e.code==="invalid_argument"?"Je kan hier niets wijzigen":"Bewaren mislukt, probeer opnieuw");return false}}
+async function remove(col,id){try{await db.doc(col+"/"+id).delete();toast("Verwijderd")}catch(e){toast("Verwijderen mislukt")}}
+function csv(kind){const q=v=>{v=v==null?"":String(v);return /[;"\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};const n=v=>v==null||v===""?"":(+v).toFixed(2).replace(".",",");let rows;
+  if(kind==="purchases"){const y=+(UI.aYear||now().getFullYear());rows=[["Datum","Leverancier","Factuurnr","Omschrijving","Categorie","Bedrag EUR","Valuta","Bedrag valuta","Soort","Jaren","Zakelijk %","Aftrekbaar "+y,"Bestand"],...sorted(S.purchases).map(p=>[p.datum,p.leverancier,p.factuurnr,p.omschrijving,p.categorie,n(p.bedrag),p.valuta,n(p.bedragOrig),p.soort,p.jaren,p.zakelijk,n(deductible(p,y)),p.bestand])]}
+  else if(kind==="invoices"){rows=[["Nummer","Soort","Datum","Vervaldatum","Klant","Btw klant","Bedrag","Status","Betaald op"],...[...S.invoices].sort((a,b)=>(a.nummer||"").localeCompare(b.nummer||"")).map(i=>[i.nummer,i.type,i.datum,i.vervaldatum,i.klant,i.btw,n(invTotal(i)),invStatus(i),i.betaaldOp])]}
+  else{rows=[["Datum","Klant","Event","Status","Start","Einde","Locatie","Video","Foto","Betaling","Ontvangen","Factuur","Contact","Fotograaf","Notities"],...sorted(S.bookings).map(b=>[b.datum,b.klant,b.event,b.status,b.start,b.eind,b.locatie,n(b.video),n(b.foto),b.betaling,n(b.ontvangen),b.factuur,b.contact,b.fotograaf,b.notitie])]}
+  const txt="﻿"+rows.map(r=>r.map(q).join(";")).join("\r\n");
+  if(!dl){toast("Exporteren lukt hier niet");return}
+  dl.save({filename:`PrimeMoments_${{purchases:"Aankopen",invoices:"Verkoopfacturen",bookings:"Boekingen"}[kind]}_${iso(now())}.csv`,data:txt}).then(()=>toast("Bewaard")).catch(e=>{if(e&&e.code!=="declined")toast("Exporteren lukt hier niet")})}
+
+/* ================= render & events ================= */
+function render(){
+  if(UI.mode==="crew"||UI.preview){$("#nav").hidden=true;$("#fab").hidden=true;document.querySelector(".app").style.gridTemplateColumns="1fr";const ae=document.activeElement;const k=ae&&ae.id==="crewcode"?ae.value:null;$("#main").innerHTML=crewPage();if(k!==null){const el=$("#crewcode");if(el){el.value=k;el.focus()}}return}
+  $("#nav").hidden=false;document.querySelector(".app").style.gridTemplateColumns="";
+  const h=(location.hash||"#vandaag").slice(1);UI.view=V[h]?h:"vandaag";
+  renderNav();
+  const banner=!db&&ready?`<div class="banner">Je gegevens konden niet geladen worden. Open je HQ via claude.ai terwijl je ingelogd bent.</div>`:"";
+  const ae=document.activeElement;const keep=ae&&ae.id&&/search$/.test(ae.id)?[ae.id,ae.selectionStart]:null;
+  $("#main").innerHTML=banner+(!ready&&UI.view!=="kennisbank"?`<div class="empty">Je headquarter laadt…</div>`:V[UI.view]());
+  if(keep){const el=document.getElementById(keep[0]);if(el){el.focus();try{el.setSelectionRange(keep[1],keep[1])}catch(_){}}}
+  $("#fab").hidden=!canWrite;
+}
+let rt=null;const rerender=()=>{clearTimeout(rt);rt=setTimeout(render,30)};
+window.addEventListener("hashchange",()=>{UI.month=null;render();window.scrollTo(0,0)});
+matchMedia("(min-width:960px)").addEventListener?.("change",renderNav);
+document.addEventListener("click",async e=>{
+  if(e.target.closest(".scrim"))return;
+  if(e.target.closest("[data-goaandacht]")){UI.bFilter="aandacht";UI.bSearch="";return}
+  if(e.target.closest("[data-endpreview]")){UI.preview=null;CREW.un.forEach(f=>{try{f()}catch(_){}});CREW.un=[];location.hash="team";return render()}
+  if(e.target.closest("[data-crewlogout]")){lsSet(null);UI.crewErr="";watchCrew(null);return}
+  const inv_=e.target.closest("[data-invite]");if(inv_)return openInvite(inv_.dataset.invite);
+  const t=e.target.closest("[data-edit],[data-new],[data-newb],[data-act],[data-bf],[data-yr],[data-mo],[data-klant],[data-tdel],[data-copy],[data-inv],[data-cal],[data-day],[data-clearsel],[data-ff],[data-fy],[data-ay],[data-csv],#fab");if(!t)return;
+  if(t.id==="fab"||t.dataset.act==="new")return openNew();
+  if(t.dataset.act==="lost"){UI.lostOpen=!UI.lostOpen;return render()}
+  if(t.dataset.edit){const [c,id]=t.dataset.edit.split(":");return openForm(c,id)}
+  if(t.dataset.new)return newOf(t.dataset.new);
+  if(t.dataset.newb!==undefined)return newOf("bookings",t.dataset.newb?{datum:t.dataset.newb}:{});
+  if(t.dataset.inv)return openInvoice(t.dataset.inv);
+  if(t.dataset.bf){UI.bFilter=t.dataset.bf;return render()}
+  if(t.dataset.ff){UI.fFilter=t.dataset.ff;return render()}
+  if(t.dataset.fy){UI.fYear=t.dataset.fy;return render()}
+  if(t.dataset.ay){UI.aYear=t.dataset.ay;return render()}
+  if(t.dataset.yr){UI.year=t.dataset.yr;UI.month=null;return render()}
+  if(t.dataset.mo){const i=+t.dataset.mo;UI.month=UI.month===i?null:i;return render()}
+  if(t.dataset.cal!==undefined){const d=+t.dataset.cal;if(!d){const n=now();UI.cal=[n.getFullYear(),n.getMonth()];UI.calSel=iso(n)}else{let [y,m]=UI.cal;m+=d;if(m<0){m=11;y--}if(m>11){m=0;y++}UI.cal=[y,m];UI.calSel=null}return render()}
+  if(t.dataset.day){const ds=t.dataset.day;const d=pd(ds);if(d.getMonth()!==UI.cal[1])UI.cal=[d.getFullYear(),d.getMonth()];UI.calSel=UI.calSel===ds?null:ds;return render()}
+  if(t.hasAttribute("data-clearsel")){e.preventDefault();UI.calSel=null;return render()}
+  if(t.dataset.klant)return openClient(t.dataset.klant);
+  if(t.dataset.tdel)return remove("tasks",t.dataset.tdel);
+  if(t.dataset.csv)return csv(t.dataset.csv);
+  if(t.dataset.copy){const el=document.getElementById(t.dataset.copy);try{await navigator.clipboard.writeText(el.textContent);toast("Gekopieerd")}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Geselecteerd, kopieer met je toetsenbord")}}
+});
+document.addEventListener("change",e=>{const c=e.target.closest("[data-tk]");if(c&&db){db.doc("tasks/"+c.dataset.tk).update({klaar:c.checked}).catch(()=>toast("Bewaren mislukt"))}});
+document.addEventListener("submit",e=>{const cc=e.target.closest("[data-crewcode]");if(cc){e.preventDefault();const v=cc.querySelector("input").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");if(v.length!==12){UI.crewErr="Een code heeft 12 tekens, bv. ABCD-EFGH-JKLM.";return render()}const k=v.slice(0,4)+"-"+v.slice(4,8)+"-"+v.slice(8);UI.crewErr="";lsSet(k);watchCrew(k);return}
+  const f=e.target.closest("[data-addtask]");if(!f)return;e.preventDefault();const i=f.querySelector("input");const v=i.value.trim();if(!v)return;i.value="";save("tasks",null,{titel:v,klaar:false})});
+document.addEventListener("input",e=>{if(e.target.id==="bsearch"){UI.bSearch=e.target.value;render()}if(e.target.id==="ksearch"){UI.kSearch=e.target.value;render()}});
+
+
+/* ================= Supabase backend ================= */
+const SB=window.supabase.createClient("https://unktazjceutqoduzjnfq.supabase.co","sb_publishable_6UsFWGZPbhvMqzRZfAbzaQ_Gg-8zs8z",{auth:{persistSession:true,autoRefreshToken:true}});
+function makeDb(sb){
+  const cache={},listeners={},docL={},timers={};
+  const snapOf=c=>({docs:(cache[c]||[]).map(r=>({id:r.id,exists:true,data:()=>r.data}))});
+  const emit=c=>{(listeners[c]||[]).forEach(f=>f(snapOf(c)));(docL[c]||[]).forEach(([id,f])=>{const r=(cache[c]||[]).find(x=>x.id===id);f({id,exists:!!r,data:()=>r&&r.data})})};
+  async function load(c){const {data,error}=await sb.from("docs").select("id,data").eq("collection",c);if(error)throw error;cache[c]=data||[];emit(c)}
+  const later=c=>{clearTimeout(timers[c]);timers[c]=setTimeout(()=>load(c).catch(()=>{}),250)};
+  sb.channel("docs-live").on("postgres_changes",{event:"*",schema:"public",table:"docs"},p=>{const c=(p.new&&p.new.collection)||(p.old&&p.old.collection);if(c&&(listeners[c]||docL[c]))later(c)}).subscribe();
+  const split=p=>{const k=p.lastIndexOf("/");return [p.slice(0,k),p.slice(k+1)]};
+  const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const chk=({error})=>{if(error){const e=new Error(error.message);e.code=error.code==="42501"?"invalid_argument":"unavailable";throw e}};
+  function doc(path){const [c,id]=split(path);return{
+    get:async()=>{const {data,error}=await sb.from("docs").select("data").eq("collection",c).eq("id",id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},
+    set:async o=>{chk(await sb.from("docs").upsert({collection:c,id,data:o}));await load(c)},
+    update:async o=>{const cur=((cache[c]||[]).find(x=>x.id===id)||{}).data||(await this_get(c,id))||{};chk(await sb.from("docs").upsert({collection:c,id,data:Object.assign({},cur,o)}));await load(c)},
+    delete:async()=>{chk(await sb.from("docs").delete().eq("collection",c).eq("id",id));await load(c)},
+    onSnapshot:(n,e)=>{(docL[c]=docL[c]||[]).push([id,n]);load(c).catch(err=>e&&e(err));return()=>{}}}}
+  async function this_get(c,id){const {data}=await sb.from("docs").select("data").eq("collection",c).eq("id",id).maybeSingle();return data&&data.data}
+  function collection(c){return{
+    onSnapshot:(n,e)=>{(listeners[c]=listeners[c]||[]).push(n);load(c).catch(err=>e&&e(err));return()=>{}},
+    get:async()=>{await load(c);return snapOf(c)},
+    add:async o=>{const id=rid();chk(await sb.from("docs").insert({collection:c,id,data:o}));await load(c);return doc(c+"/"+id)},
+    doc:id=>doc(c+"/"+id)}}
+  return{collection,doc}}
+dl={save:async({filename,data})=>{const b=new Blob([data],{type:filename.endsWith(".csv")?"text/csv;charset=utf-8":"text/html;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);return{status:"saved"}}};
+function loginPage(msg){$("#nav").hidden=true;$("#fab").hidden=true;document.querySelector(".app").style.gridTemplateColumns="1fr";
+  $("#main").innerHTML=`<div class="crew-wrap" style="max-width:420px;padding-top:6vh"><div class="crew-top"><span class="logo">PRIMEMOMENTS<i></i></span><span class="eyebrow" style="margin:0">Headquarter</span></div>
+   <form class="entry" id="loginform"><h2 style="font-size:24px;margin-bottom:6px">Aanmelden</h2><p class="note" style="margin-top:0">Alleen voor Hatice.</p>
+   <div class="f" style="margin-top:14px"><label for="l-mail">E-mail</label><input id="l-mail" type="email" autocomplete="username" required></div>
+   <div class="f" style="margin-top:10px"><label for="l-pw">Wachtwoord</label><input id="l-pw" type="password" autocomplete="current-password" required minlength="8"></div>
+   <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" name="mode" value="in">Aanmelden</button><button class="btn ghost" name="mode" value="up">Account aanmaken</button></div>
+   ${msg?`<p class="note" style="color:var(--warn)">${esc(msg)}</p>`:""}</form></div>`;
+  const f=$("#loginform");f.addEventListener("submit",async e=>{e.preventDefault();const mode=e.submitter&&e.submitter.value;const email=$("#l-mail").value.trim(),password=$("#l-pw").value;
+    if(mode==="up"){const {error}=await SB.auth.signUp({email,password});return loginPage(error?error.message:"Account aangemaakt. Bevestig je e-mailadres via de mail van Supabase en meld je daarna hier aan. Laat Claude dan weten dat je account klaar is.")}
+    const {error}=await SB.auth.signInWithPassword({email,password});if(error)return loginPage(error.message==="Invalid login credentials"?"E-mail of wachtwoord klopt niet.":error.message);start()})}
+async function importFile(file){try{const j=JSON.parse(await file.text());const rows=(j.docs||[]).filter(r=>r.collection&&r.id&&r.data);toast("Importeren… "+rows.length+" items");
+  for(let k=0;k<rows.length;k+=100){const {error}=await SB.from("docs").upsert(rows.slice(k,k+100));if(error)throw error}
+  toast("Klaar: "+rows.length+" items geïmporteerd");COLS.forEach(c=>db.collection(c).get().catch(()=>{}))}catch(err){toast("Importeren mislukt: "+(err.message||err))}}
+document.addEventListener("change",e=>{if(e.target.id==="importfile"&&e.target.files[0])importFile(e.target.files[0])});
+document.addEventListener("click",async e=>{if(e.target.closest("[data-logout]")){await SB.auth.signOut();location.hash="";location.reload()}});
+let started=false;
+async function start(){const {data:{session}}=await SB.auth.getSession();if(!session)return loginPage();
+  const {data:adm}=await SB.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
+  if(!adm)return loginPage("Je bent aangemeld als "+session.user.email+", maar dit account heeft nog geen toegang. Laat Claude weten dat je account klaar is.");
+  if(started)return;started=true;db=makeDb(SB);canWrite=true;UI.mode="owner";render();
+  const pending=new Set(COLS);
+  const done=c=>{pending.delete(c);if(!pending.size&&!ready)ready=true;rerender()};
+  COLS.forEach(c=>db.collection(c).onSnapshot(s=>{S[c]=s.docs.map(x=>Object.assign({id:x.id},x.data()));done(c)},()=>done(c)));
+  db.doc("settings/finance").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,s.data());rerender()},()=>{});
+  db.doc("settings/team").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,{teamCode:s.data().teamCode});rerender()},()=>{});
+  setTimeout(()=>{if(!ready){ready=true;render()}},8000)}
+start();
+})();
+</script>
+</body>
+</html>
