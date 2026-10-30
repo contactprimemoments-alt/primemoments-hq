@@ -171,6 +171,13 @@ section.block>h2 .meta{font-family:var(--body);font-size:13px;font-weight:500;co
 .e-req{background:var(--info-bg);color:var(--info);border:1px dashed var(--info)} .d-req{background:var(--info)}
 .newbox{background:var(--surface);border:2px solid var(--info);border-radius:var(--r);padding:4px 0;margin-bottom:22px;box-shadow:var(--shadow)}
 .newbox h2{font-size:17px;padding:10px 14px 4px;display:flex;justify-content:space-between}
+.prio{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bad);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:18px;cursor:pointer;border:0;width:100%;text-align:left;font:inherit}
+.prio b{font-weight:600}.prio span{font-size:13px;opacity:.9}
+.p-prio{background:var(--bad);color:#fff}
+.matrix td.hi{font-weight:700;color:var(--accent)}
+.lead{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:22px}
+.lead .tile .v{font-size:20px;white-space:normal}
+.subtabs{display:flex;gap:6px;margin-bottom:18px}
 .e-blk{background:var(--surface);color:var(--muted);border:1px dashed var(--line)}
 @media (min-width:700px){.day{min-height:104px}.day .ev{display:block}.dots{display:none}}
 .cal-nav{display:flex;align-items:center;gap:6px}
@@ -355,10 +362,10 @@ function nextInvNr(year){const nums=S.invoices.filter(i=>(i.nummer||"").startsWi
 
 /* ================= navigation ================= */
 function badge(v){if(!ready)return "";
-  if(v==="vandaag"){const n=S.bookings.filter(b=>flags(b).length).length;return n||""}
+  if(v==="vandaag"){const n=S.bookings.filter(b=>flags(b).length).length+S.leads.filter(l=>l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw").length;return n||""}
   if(v==="facturen"){const n=S.invoices.filter(i=>invStatus(i)==="Vervallen").length;return n||""}
   if(v==="taken"){const n=S.tasks.filter(t=>!t.klaar).length;return n||""}
-  if(v==="aanvragen"){const n=S.leads.filter(l=>["Nieuw"].includes(l.status)).length;return n||""}
+  if(v==="aanvragen"){const n=S.leads.filter(l=>["Nieuw"].includes(l.status||"Nieuw")).length;return n||""}
   return ""}
 function renderNav(){
   const cur=UI.view;const inMeer=!MOBILE.includes(cur);
@@ -476,8 +483,8 @@ V.boekingen=()=>{
 
 const LSTAT=["Nieuw","Offerte gestuurd","Wacht op antwoord","Geboekt","Verloren"];
 V.aanvragen=()=>{
-  const act=LSTAT.slice(0,3);const L=st=>S.leads.filter(l=>(l.status||"Nieuw")===st).sort((a,b)=>(b.ontvangen||"").localeCompare(a.ontvangen||""));
-  const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.teamAanvraag?"van "+tName(l.bron):(l.kanaal||""),l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
+  const act=LSTAT.slice(0,3);const L=st=>S.leads.filter(l=>(l.status||"Nieuw")===st).sort((a,b)=>(!!b.teamAanvraag-!!a.teamAanvraag)||(b.created||b.ontvangen||"").localeCompare(a.created||a.ontvangen||""));
+  const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw"?pill("Prioriteit","p-prio")+" ":""}${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.teamAanvraag?"van "+tName(l.bron):(l.kanaal||""),l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
   const geboekt=L("Geboekt"),verloren=L("Verloren");
   const conv=geboekt.length+verloren.length?Math.round(geboekt.length/(geboekt.length+verloren.length)*100):0;
   return `<div class="ph"><div><div class="eyebrow">Pipeline</div><h1>Aanvragen</h1></div><div class="acts"><button class="btn" data-new="leads">+ Aanvraag</button></div></div>
@@ -614,6 +621,32 @@ V.kennisbank=()=>`<div class="ph"><div><div class="eyebrow">Alles op één plek<
 </div>`;
 
 /* ================= team ================= */
+const ETYPES=["Nikah","Söz / nişan / isteme","Kına / henna","Düğün / trouw","Business","Overig"];
+function etype(b){const t=((b.event||"")+" "+(b.pakket||"")).toLowerCase();
+  if(/gelin|düğün|dugun|trouw|wedding|bruiloft/.test(t))return "Düğün / trouw";
+  if(/nikah|nikkah|burgerlijk|gemeentehuis/.test(t))return "Nikah";
+  if(/kına|kina|henna/.test(t))return "Kına / henna";
+  if(/söz|soz|nişan|nisan|verloving|isteme|handvra|aanzoek/.test(t))return "Söz / nişan / isteme";
+  if(b.categorie==="Business"||/business|bedrijf|conferentie|prime social|content|shoot met|extensions/.test(t))return "Business";
+  return "Overig"}
+function teamAnalysis(){const yr=UI.taYear||String(now().getFullYear());const T=S.team;
+  const years=[...new Set(S.bookings.filter(b=>(b.team||[]).length).map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
+  const B=S.bookings.filter(b=>b.status!=="Geannuleerd"&&(b.datum||"").startsWith(yr)&&(b.team||[]).length);
+  const td=iso(now());
+  const st=T.map(m=>{const L=B.filter(b=>b.team.includes(m.id));const done=L.filter(b=>b.datum<td);const per={};ETYPES.forEach(t=>per[t]=0);L.forEach(b=>per[etype(b)]++);
+    const mon=Array(12).fill(0);L.forEach(b=>mon[+b.datum.slice(5,7)-1]+=hours(b));
+    return {m,n:L.length,done:done.length,up:L.length-done.length,u:L.reduce((a,b)=>a+hours(b),0),ud:done.reduce((a,b)=>a+hours(b),0),per,mon}}).filter(x=>x.n||x.m.actief!==false);
+  const top=t=>{const mx=Math.max(0,...st.map(x=>x.per[t]));return mx?st.filter(x=>x.per[t]===mx).map(x=>x.m.naam.split(" ")[0]).join(" & ")+` (${mx})`:"–"};
+  const most=st.slice().sort((a,b)=>b.u-a.u)[0];const mxU=Math.max(1,...st.map(x=>x.u));
+  const usedT=ETYPES.filter(t=>st.some(x=>x.per[t]));
+  return `<div class="toolbar"><div class="chips">${years.map(y=>`<button class="chip" data-tay="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}</div></div>
+   <div class="lead"><div class="tile dark"><div class="k">Meeste uren ${yr}</div><div class="v">${most&&most.u?esc(most.m.naam.split(" ")[0])+" · "+Math.round(most.u)+" u":"–"}</div></div>${usedT.slice(0,5).map(t=>`<div class="tile"><div class="k">Meeste ${esc(t.toLowerCase())}</div><div class="v">${esc(top(t))}</div></div>`).join("")}</div>
+   <section class="block"><h2>Uren per teamlid <span class="meta">gepland + gewerkt · ${yr}</span></h2><div class="list" style="padding:8px 0">${st.map(x=>`<div class="hbar"><span>${esc(x.m.naam)}</span><span class="tr"><span style="width:${x.u/mxU*100}%"></span></span><b>${Math.round(x.u*10)/10} u</b></div>`).join("")}</div></section>
+   <section class="block"><h2>Shoots per type <span class="meta">${yr}</span></h2><div class="tbl-wrap"><table class="tbl matrix"><thead><tr><th>Teamlid</th>${usedT.map(t=>`<th>${esc(t)}</th>`).join("")}<th>Totaal</th></tr></thead><tbody>
+    ${st.map(x=>`<tr><td>${esc(x.m.naam)}</td>${usedT.map(t=>{const mx=Math.max(...st.map(y=>y.per[t]));return `<td class="${x.per[t]&&x.per[t]===mx?"hi":""}">${x.per[t]||"–"}</td>`}).join("")}<td><b>${x.n}</b></td></tr>`).join("")}
+    <tr class="tot"><td>Totaal</td>${usedT.map(t=>`<td>${st.reduce((a,x)=>a+x.per[t],0)}</td>`).join("")}<td>${st.reduce((a,x)=>a+x.n,0)}</td></tr></tbody></table></div><p class="note">Het vetste getal per kolom is wie dat type het vaakst deed. Een shoot met twee teamleden telt voor allebei.</p></section>
+   <section class="block"><h2>Gewerkt en gepland <span class="meta">${yr}</span></h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Teamlid</th><th>Shoots gedaan</th><th>Uren gewerkt</th><th>Nog gepland</th><th>Uren gepland</th></tr></thead><tbody>${st.map(x=>`<tr><td>${esc(x.m.naam)}</td><td>${x.done}</td><td>${Math.round(x.ud*10)/10} u</td><td>${x.up}</td><td>${Math.round((x.u-x.ud)*10)/10} u</td></tr>`).join("")}</tbody></table></div></section>
+   <section class="block"><h2>Uren per maand <span class="meta">${yr}</span></h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Teamlid</th>${MAAND.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${st.map(x=>`<tr><td>${esc(x.m.naam.split(" ")[0])}</td>${x.mon.map(v=>`<td>${v?Math.round(v):"–"}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="note">Uren volgens de start- en einduren van de boeking. Shoots zonder uur tellen niet mee in de uren.</p></section>`}
 const tName=id=>((S.team.find(m=>m.id===id)||{}).naam||"iemand").split(" ")[0];
 const openLeads=()=>S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status||"Nieuw"));
 function teamNews(){const reqs=S.leads.filter(l=>l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw").sort((a,b)=>(b.created||"").localeCompare(a.created||""));
@@ -628,7 +661,9 @@ function hours(x){if(!x.start||!x.eind)return 0;const p=t=>{const [h,m]=t.split(
 function genKey(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";const r=new Uint8Array(12);crypto.getRandomValues(r);const c=[...r].map(x=>A[x%A.length]).join("");return c.slice(0,4)+"-"+c.slice(4,8)+"-"+c.slice(8)}
 const shiftsOf=m=>sorted(S.bookings.filter(b=>(b.team||[]).includes(m.id)&&b.status!=="Geannuleerd"));
 V.team=()=>{const ym=iso(now()).slice(0,7);const T=[...S.team].sort((a,b)=>(b.actief!==false)-(a.actief!==false)||(a.code||a.naam).localeCompare(b.code||b.naam));
-  return `<div class="ph"><div><div class="eyebrow">Wie er mee filmt</div><h1>Team</h1></div><div class="acts"><button class="btn" data-new="team">+ Teamlid</button></div></div>
+  const head=`<div class="ph"><div><div class="eyebrow">Wie er mee filmt</div><h1>Team</h1></div><div class="acts"><button class="btn" data-new="team">+ Teamlid</button></div></div><div class="subtabs"><button class="chip" data-tt="planning" aria-pressed="${UI.tt!=="analyse"}">Planning</button><button class="chip" data-tt="analyse" aria-pressed="${UI.tt==="analyse"}">Analyse</button></div>`;
+  if(UI.tt==="analyse")return head+teamAnalysis();
+  return head+`
   ${T.length?T.map(m=>{const sh=shiftsOf(m);const up=sh.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)>=0);const mo=sh.filter(b=>(b.datum||"").startsWith(ym));
    return `<section class="block"><h2>${esc(m.naam)}${m.code&&m.code!==m.naam?` <span style="font-family:var(--body);font-size:13px;color:var(--muted);font-weight:500">${esc(m.code)}</span>`:""} <span class="meta">${esc(m.rol||"")}${m.actief===false?" · niet actief":""}</span></h2>
     <div class="tiles" style="margin-bottom:10px"><div class="tile"><div class="k">Komende shoots</div><div class="v">${up.length}</div></div><div class="tile"><div class="k">${cap(MAANDL[now().getMonth()])}</div><div class="v">${mo.reduce((a,b)=>a+hours(b),0)} u</div><div class="s">${mo.length} shoots</div></div><div class="tile"><div class="k">Toegang</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-invite="${m.id}">Uitnodiging</button><button class="btn ghost sm" data-edit="team:${m.id}">Bewerk</button></div></div></div>
@@ -816,7 +851,9 @@ function render(){
   $("#nav").hidden=false;document.querySelector(".app").style.gridTemplateColumns="";
   const h=(location.hash||"#vandaag").slice(1);UI.view=V[h]?h:"vandaag";
   renderNav();
-  const banner=!db&&ready?`<div class="banner">Je gegevens konden niet geladen worden. Open je HQ via claude.ai terwijl je ingelogd bent.</div>`:"";
+  const pr=ready?S.leads.filter(l=>l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw"):[];
+  const prio=pr.length&&UI.view!=="vandaag"?`<button class="prio" data-edit="leads:${pr[0].id}"><span><b>${pr.length===1?"Nieuwe boekingsaanvraag van "+esc(tName(pr[0].bron)):pr.length+" nieuwe boekingsaanvragen van je team"}</b><br><span>${esc(pr[0].naam)}${pr[0].datum?" · "+dl_(pr[0].datum):""}${pr[0].start?" · "+esc(pr[0].start):""}</span></span><span>Bekijk ›</span></button>`:"";
+  const banner=prio+(!db&&ready?`<div class="banner">Je gegevens konden niet geladen worden. Open je HQ via claude.ai terwijl je ingelogd bent.</div>`:"");
   const ae=document.activeElement;const keep=ae&&ae.id&&/search$/.test(ae.id)?[ae.id,ae.selectionStart]:null;
   $("#main").innerHTML=banner+(!ready&&UI.view!=="kennisbank"?`<div class="empty">Je headquarter laadt…</div>`:V[UI.view]());
   if(keep){const el=document.getElementById(keep[0]);if(el){el.focus();try{el.setSelectionRange(keep[1],keep[1])}catch(_){}}}
@@ -828,6 +865,8 @@ matchMedia("(min-width:960px)").addEventListener?.("change",renderNav);
 document.addEventListener("click",async e=>{
   if(e.target.closest(".scrim"))return;
   if(e.target.closest("[data-goaandacht]")){UI.bFilter="aandacht";UI.bSearch="";return}
+  const tt_=e.target.closest("[data-tt]");if(tt_){UI.tt=tt_.dataset.tt;return render()}
+  const tay=e.target.closest("[data-tay]");if(tay){UI.taYear=tay.dataset.tay;return render()}
   if(e.target.closest("[data-endpreview]")){UI.preview=null;CREW.un.forEach(f=>{try{f()}catch(_){}});CREW.un=[];location.hash="team";return render()}
   if(e.target.closest("[data-crewlogout]")){lsSet(null);UI.crewErr="";watchCrew(null);return}
   const inv_=e.target.closest("[data-invite]");if(inv_)return openInvite(inv_.dataset.invite);
