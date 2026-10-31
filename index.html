@@ -348,6 +348,16 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .seg.fx{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--surface)) 0 4px,color-mix(in srgb,var(--accent) 15%,var(--surface)) 4px 8px);border-radius:4px 4px 0 0}
 .legend i.fxl{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--surface)) 0 3px,color-mix(in srgb,var(--accent) 15%,var(--surface)) 3px 6px)}
 .fcx{margin-top:12px;font-size:13px}.fcx summary{cursor:pointer;color:var(--muted)}.fcx ul{margin:10px 0 0;padding-left:18px;display:grid;gap:6px}
+.spaar{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.sp-in{grid-template-columns:repeat(3,1fr);margin-bottom:14px}.sp-in input{font-size:16px}
+@media (max-width:700px){.sp-in{grid-template-columns:1fr}}
+.sp-tbl td{vertical-align:top;white-space:normal}.sp-tbl td:first-child,.sp-tbl th:first-child{text-align:left}.sp-end{font-family:var(--display);font-size:22px;font-weight:600}.sp-tbl small{color:var(--muted);font-size:11.5px;display:block;max-width:240px}
+.sp-tbl tr.hi td{background:var(--sand2)}
+.sp-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media (max-width:800px){.sp-cards{grid-template-columns:1fr}}
+.sp-card{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--bg)}.sp-card.hi{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sp-lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sp-row{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}.sp-row:first-of-type{border-top:0}
+.sp-row span{font-size:13px;color:var(--muted)}.sp-row .sp-end{text-align:right;font-family:var(--display);font-size:22px;font-weight:600}.sp-row small{grid-column:1/-1;color:var(--muted);font-size:11.5px}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -915,8 +925,24 @@ document.addEventListener("change",async e=>{const i=e.target.closest("[data-max
 /* ================= privé: loon + Prime Moments ================= */
 function monthCost(k){const y=+k.slice(0,4);return S.purchases.reduce((a,p)=>{const z=(p.zakelijk??100)/100;const amt=(+p.bedrag||0)*z;const d=p.datum||"";const y0=+d.slice(0,4);if(!y0)return a;
   if(p.soort==="Investering"){const n=+p.jaren||3;return a+(y>=y0&&y<y0+n?amt/n/12:0)}return a+(d.slice(0,7)===k?amt:0)},0)}
+function spaarBlock(estCost){const st=S.settings;const sm=+st.spaarMaand||0,s0=+st.spaarStart||0,tx=st.taxPct==null?30:+st.taxPct;const loon=+st.loon||0;
+  const n0=now();const yNow=n0.getFullYear();const ymNow=iso(n0).slice(0,7);
+  const calc=(sk,Y)=>{const F=expertForecast(sk);let months=0,pm=0;F.months.forEach(x=>{if(x.k<=ymNow&&n0.getDate()>=25)return;if(x.y>Y)return;months++;pm+=x.booked+x.extra+x.rec-Math.round(estCost)});
+    const net=Math.max(0,pm)*(1-tx/100);return{months,pm,net,loonSp:sm*months,end:s0+sm*months+net,inc:loon*months+pm}};
+  const ys=[yNow,yNow+1];
+  return `<section class="block spaar"><h2>Wat heb ik op het einde van het jaar? <span class="meta">spaarcalculator</span></h2>
+   <div class="fgrid sp-in">
+    <div class="f"><label for="sp-m">Ik spaar per maand van mijn loon (€)</label><input id="sp-m" type="number" inputmode="decimal" value="${sm||""}" placeholder="bv. 500" data-sp="spaarMaand"></div>
+    <div class="f"><label for="sp-s">Wat ik nu al gespaard heb (€, mag leeg)</label><input id="sp-s" type="number" inputmode="decimal" value="${s0||""}" placeholder="0" data-sp="spaarStart"></div>
+    <div class="f"><label for="sp-t">Van Prime Moments zet ik opzij voor belastingen (%)</label><input id="sp-t" type="number" inputmode="decimal" value="${tx}" data-sp="taxPct"></div>
+   </div>
+   <div class="sp-cards">${Object.entries(SCEN).map(([k,v])=>`<div class="sp-card${k===(UI.pScen||"realistisch")?" hi":""}"><div class="sp-lab">${v.lab}</div>${ys.map(y=>{const c=calc(k,y);return `<div class="sp-row"><span>Eind ${y}</span><b class="sp-end">${eur(c.end)}</b><small>${s0?eur(s0)+" + ":""}${eur(c.loonSp)} van je loon + ${eur(c.net)} uit Prime Moments</small></div>`}).join("")}</div>`).join("")}</div>
+   <p class="note">Telt vanaf ${n0.getDate()>=25?"volgende maand":"deze maand"}; "eind ${yNow+1}" loopt dus door vanaf nu (inclusief de rest van ${yNow}). Prime Moments = verwachte video-omzet min geschatte kosten (±${eur(estCost)}/maand), daarna gaat er ${tx}% af voor belastingen en sociale bijdragen. Dat percentage is een inschatting: vraag je boekhouder wat voor jou klopt.</p>
+  </section>`}
+document.addEventListener("change",async e=>{const i=e.target.closest("[data-sp]");if(!i)return;const k=i.dataset.sp;const v=i.value===""?null:+i.value;S.settings[k]=v;try{await db.doc("settings/finance").update({[k]:v})}catch(err){}render()});
+document.addEventListener("click",e=>{const s=e.target.closest("[data-pscen]");if(s){UI.pScen=s.dataset.pscen;render()}});
 V.prive=()=>{const loon=+S.settings.loon||0;const yNow=now().getFullYear();const yr=+(UI.pYear||yNow);const ymNow=iso(now()).slice(0,7);
-  const F=expertForecast("realistisch");const fm={};F.months.forEach(x=>fm[x.k]=x);
+  const psk=UI.pScen||"realistisch";const F=expertForecast(psk);const fm={};F.months.forEach(x=>fm[x.k]=x);
   const n0=now();const estCost=[1,2,3].map(i=>{const d=new Date(n0.getFullYear(),n0.getMonth()-i,1);return monthCost(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`)}).reduce((a,b)=>a+b,0)/3;
   const rows=[];for(let m=0;m<12;m++){const k=`${yr}-${String(m+1).padStart(2,"0")}`;const past=k<ymNow;const cur=k===ymNow;
     const real=S.bookings.filter(b=>(b.datum||"").startsWith(k)&&b.datum<iso(now())).reduce((a,b)=>a+vid(b),0);
@@ -926,7 +952,8 @@ V.prive=()=>{const loon=+S.settings.loon||0;const yNow=now().getFullYear();const
   const avgP=F.avg||0;const need=avgP?Math.ceil(loon/avgP):0;const mx=Math.max(1,...rows.map(r=>r.loon+Math.max(0,r.pm)));
   const years=[yNow,yNow+1];
   return `<div class="ph"><div><div class="eyebrow">Alleen voor jou</div><h1>Privé</h1></div><div class="acts"><button class="btn ghost" data-loon>Loon: ${loon?eur(loon)+"/maand":"instellen"}</button></div></div>
-  <div class="chips" style="margin-bottom:16px">${years.map(y=>`<button class="chip" data-pyear="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}</div>
+  <div class="chips" style="margin-bottom:16px">${years.map(y=>`<button class="chip" data-pyear="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}<span style="width:12px"></span>${Object.entries(SCEN).map(([k,v])=>`<button class="chip" data-pscen="${k}" aria-pressed="${k===psk}">${v.lab}</button>`).join("")}</div>
+  ${spaarBlock(estCost)}
   ${loon?"":`<div class="banner">Vul eerst je maandloon in via de knop rechtsboven.</div>`}
   <div class="kgrid">
    <div class="tile dark"><div class="k">Totaal inkomen ${yr}</div><div class="v">${eur(tot)}</div><div class="s">loon + Prime Moments${yr>=yNow?" (incl. verwachting)":""}</div></div>
@@ -940,7 +967,7 @@ V.prive=()=>{const loon=+S.settings.loon||0;const yNow=now().getFullYear();const
   <section class="block" style="margin-top:22px"><h2>Per maand</h2><div class="tbl-wrap"><table class="tbl" style="min-width:460px"><thead><tr><th>Maand</th><th>Loon</th><th>Prime Moments</th><th>Kosten</th><th>Totaal</th></tr></thead><tbody>
    ${rows.map(r=>`<tr${r.est?' style="color:var(--muted)"':""}><td>${cap(MAANDL[r.m])}${r.est?" <small>verwacht</small>":""}</td><td>${eur(r.loon)}</td><td>${eur(r.pm)}</td><td>${r.cost?"− "+eur(r.cost):"–"}</td><td><b>${eur(r.tot)}</b></td></tr>`).join("")}
    <tr><td><b>Totaal</b></td><td><b>${eur(sum(r=>r.loon))}</b></td><td><b>${eur(pmBr)}</b></td><td><b>${pmBr-pmNet?"− "+eur(pmBr-pmNet):"–"}</b></td><td><b>${eur(tot)}</b></td></tr></tbody></table></div>
-   <p class="note">Prime Moments = video-omzet (zonder fotografie) min je zakelijke kosten; investeringen gespreid over hun looptijd. Voor toekomstige maanden is de kost een schatting (gemiddelde van je laatste 3 maanden). Bedragen zijn vóór belastingen en sociale bijdragen. Toekomstige maanden volgen het realistische scenario uit je Cockpit.</p></section>`};
+   <p class="note">Prime Moments = video-omzet (zonder fotografie) min je zakelijke kosten; investeringen gespreid over hun looptijd. Voor toekomstige maanden is de kost een schatting (gemiddelde van je laatste 3 maanden). Bedragen zijn vóór belastingen en sociale bijdragen. Toekomstige maanden volgen het gekozen scenario (${SCEN[psk].lab.toLowerCase()}).</p></section>`};
 document.addEventListener("click",e=>{const y=e.target.closest("[data-pyear]");if(y){UI.pYear=y.dataset.pyear;return render()}
   if(e.target.closest("[data-loon]")){const {sc,close}=openSheet(`<form><h3>Maandloon</h3><div class="f"><label for="f-loon">Wat verdien je per maand met je vaste job? (€)</label><input id="f-loon" type="number" inputmode="decimal" value="${esc(S.settings.loon||"")}"></div><p class="note">Alleen zichtbaar voor jou in je HQ. Je team ziet dit nooit.</p><div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button><button class="btn">Bewaar</button></div></div></form>`);
     sc.querySelector("form").addEventListener("submit",async ev=>{ev.preventDefault();const g=+sc.querySelector("#f-loon").value||0;try{await db.doc("settings/finance").update({loon:g});S.settings.loon=g;toast("Bewaard");close();render()}catch(_){toast("Bewaren mislukt")}})}});
