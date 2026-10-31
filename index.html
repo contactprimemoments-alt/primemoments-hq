@@ -423,7 +423,7 @@ const addDays=(s,n)=>{const d=pd(s)||now();d.setDate(d.getDate()+n);return iso(d
 const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
 const cls=s=>"p-"+String(s||"").replace(/\s+/g,"-");
 const pill=(s,c)=>s?`<span class="pill ${c||cls(s)}">${esc(s)}</span>`:"";
-const vid=b=>b.status==="Geannuleerd"?0:(+b.video||0);
+const vid=b=>b.status==="Geannuleerd"||b.status==="On hold"?0:(+b.video||0);
 const sorted=(L,k="datum")=>[...L].sort((a,b)=>(a[k]||"9999").localeCompare(b[k]||"9999"));
 function toast(t){document.querySelectorAll(".toast").forEach(e=>e.remove());const e=document.createElement("div");e.className="toast";e.setAttribute("role","status");e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2400)}
 
