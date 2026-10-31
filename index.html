@@ -360,10 +360,8 @@ const toReceive=b=>{if(b.status==="Geannuleerd"||b.status==="Gereserveerd"||b.be
 function sameDay(b){if(!b.datum||b.status==="Geannuleerd")return [];return S.bookings.filter(o=>o.id!==b.id&&o.datum===b.datum&&o.status!=="Geannuleerd")}
 function flags(b){const f=[];if(b.status==="Geannuleerd")return f;const dt=daysTo(b.datum);
   if(!b.datum)f.push("Datum ontbreekt");
-  if(dt!==null&&dt<0&&b.status!=="Afgerond")f.push("Datum voorbij");
-  if(dt!==null&&dt<0&&b.status==="Gereserveerd")f.splice(f.indexOf("Datum voorbij"),1,"Doorgegaan?");
+  if(dt!==null&&dt<0&&b.status==="Gereserveerd")f.push("Doorgegaan?");
   if(!b.video&&!b.gratis&&b.status!=="Geannuleerd")f.push("Prijs ontbreekt");
-  if(b.betaling==="Te checken"&&dt!==null&&dt<0)f.push("Betaling nakijken");
   if(dt!==null&&dt>=0&&sameDay(b).length)f.push("2 shoots die dag");
   if(dt!==null&&dt>=0&&inBlock(b.datum))f.push("Valt in "+inBlock(b.datum).titel);
   return f}
@@ -427,7 +425,7 @@ V.vandaag=()=>{
   const openInv=S.invoices.filter(i=>invStatus(i)!=="Betaald");
   const komend=up.filter(b=>daysTo(b.datum)<=21);
   const aandacht=sorted(B.filter(b=>flags(b).length));
-  const montage=sorted(B.filter(b=>b.levering==="In montage"||(b.status==="Afgerond"&&b.levering==="Nog te filmen")));
+  const montage=sorted(B.filter(b=>b.levering==="In montage"));
   const vervallen=S.invoices.filter(i=>invStatus(i)==="Vervallen");
   const nxDays=nx?daysTo(nx.datum):null;
   const imp=!S.bookings.length&&!S.invoices.length?`<div class="entry" style="margin-bottom:22px"><h2 style="font-size:20px">Je gegevens importeren</h2><p class="note">Je HQ is nog leeg. Kies het bestand <b>PrimeMoments_HQ_gegevens.json</b> dat je van Claude kreeg. Dat moet maar één keer.</p><input type="file" id="importfile" accept=".json,application/json" style="font-family:var(--body);font-size:14px;text-transform:none;letter-spacing:0"></div>`:"";
@@ -484,7 +482,7 @@ V.boekingen=()=>{
   if(f==="komend")L=L.filter(b=>!["Geannuleerd","Afgerond"].includes(b.status)&&(daysTo(b.datum)===null||daysTo(b.datum)>=0));
   if(f==="gereserveerd")L=L.filter(b=>b.status==="Gereserveerd");
   if(f==="aandacht")L=L.filter(b=>flags(b).length);
-  if(f==="montage")L=L.filter(b=>b.levering==="In montage"||(b.status==="Afgerond"&&b.levering==="Nog te filmen"));
+  if(f==="montage")L=L.filter(b=>b.levering==="In montage");
   if(f==="afgerond")L=L.filter(b=>b.status==="Afgerond");
   if(f==="geannuleerd")L=L.filter(b=>b.status==="Geannuleerd");
   if(UI.bSearch){const q=UI.bSearch.toLowerCase();L=S.bookings.filter(b=>[b.klant,b.namen,b.event,b.locatie,b.notitie,b.contact,b.fotograaf].join(" ").toLowerCase().includes(q))}
@@ -1064,12 +1062,18 @@ async function importFile(file){try{const j=JSON.parse(await file.text());const 
 document.addEventListener("change",e=>{if(e.target.id==="importfile"&&e.target.files[0])importFile(e.target.files[0])});
 document.addEventListener("click",async e=>{if(e.target.closest("[data-logout]")){await SB.auth.signOut();location.hash="";location.reload()}});
 let started=false;
+/* voorbije shoots vanzelf afronden: dag erna -> Afgerond + In montage, na 3 weken -> Afgeleverd */
+function autoClose(){(S.bookings||[]).forEach(b=>{const dt=daysTo(b.datum);if(dt===null||dt>=0)return;const u={};
+  if(b.status==="Bevestigd")u.status="Afgerond";
+  const st=u.status||b.status;
+  if(st==="Afgerond"){if(b.levering==="Nog te filmen"||!b.levering)u.levering=dt<-21?"Afgeleverd":"In montage";else if(b.levering==="In montage"&&dt<-21)u.levering="Afgeleverd"}
+  if(Object.keys(u).length)db.doc("bookings/"+b.id).update(u).catch(()=>{})})}
 async function start(){const {data:{session}}=await SB.auth.getSession();if(!session)return loginPage();
   const {data:adm}=await SB.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
   if(!adm)return loginPage("Je bent aangemeld als "+session.user.email+", maar dit account heeft nog geen toegang. Laat Claude weten dat je account klaar is.");
   if(started)return;started=true;db=makeDb(SB);canWrite=true;UI.mode="owner";render();
   const pending=new Set(COLS);
-  const done=c=>{pending.delete(c);if(!pending.size&&!ready)ready=true;rerender()};
+  const done=c=>{pending.delete(c);if(c==="bookings")autoClose();if(!pending.size&&!ready)ready=true;rerender()};
   COLS.forEach(c=>db.collection(c).onSnapshot(s=>{S[c]=s.docs.map(x=>Object.assign({id:x.id},x.data()));done(c)},()=>done(c)));
   db.doc("settings/finance").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,s.data());rerender()},()=>{});
   db.doc("settings/feed").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,{feedToken:s.data().token});rerender()},()=>{});
