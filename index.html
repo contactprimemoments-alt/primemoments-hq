@@ -898,7 +898,7 @@ function invFromBooking(b,kind){const co=S.companies.find(c=>(c.naam+" "+(c.hand
   const vs=kind?kind==="v":(b.status!=="Afgerond"&&daysTo(b.datum)>0);const tot=vid(b);
   const wat=(b.event||b.pakket||"Videografie")+(b.datum?" "+dShort(b.datum):"");
   const paidV=Math.max(+b.ontvangen||0,S.invoices.filter(x=>x._booking===b.id&&x.type==="Voorschotfactuur"&&x.status==="Betaald").reduce((a,x)=>a+invTotal(x),0));
-  const regels=vs?[{oms:"Voorschot (20%) – "+wat,detail:"Cinematic film + highlightfilm. Het voorschot bevestigt je datum.",bedrag:Math.round(tot*0.2)}]
+  const regels=vs?[{oms:"Voorschot – "+wat,detail:"Cinematic film + highlightfilm. Het voorschot bevestigt je datum.",bedrag:Math.round(tot*0.2)}]
     :[{oms:wat,detail:"Cinematic film + highlightfilm.",bedrag:tot}].concat(paidV?[{oms:"Reeds betaald voorschot",detail:"",bedrag:-paidV}]:[]);
   openForm("invoices",null,{type:vs?"Voorschotfactuur":"Factuur",nummer:nextInvNr(now().getFullYear()),datum:iso(now()),vervaldatum:addDays(iso(now()),7),opdracht:b.datum,status:"Open",klant:co?co.naam+(co.handelsnaam?` (${co.handelsnaam})`:""):b.klant,klantInfo:co?[co.adres,co.mail].filter(Boolean).join("\n"):"Particulier",btw:co?co.btw:"",taal:"NL",regels,_booking:b.id})}
 
