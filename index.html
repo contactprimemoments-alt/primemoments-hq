@@ -178,6 +178,19 @@ section.block>h2 .meta{font-family:var(--body);font-size:13px;font-weight:500;co
 .lead{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:22px}
 .lead .tile .v{font-size:20px;white-space:normal}
 .subtabs{display:flex;gap:6px;margin-bottom:18px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:10px}
+.kgrid .tile .v{font-size:24px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:24px;box-shadow:var(--shadow)}
+.goal .gb{height:12px;background:var(--sand2);border-radius:6px;overflow:hidden;margin:10px 0 6px}.goal .gb span{display:block;height:100%;background:var(--accent);border-radius:6px}
+.wk{display:flex;flex-wrap:wrap;gap:6px}.wk span{font-size:12px;padding:4px 9px;border-radius:999px;background:var(--ok-bg);color:var(--ok);font-variant-numeric:tabular-nums}
+.minput{width:80px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);text-align:right}
+.sbar{position:fixed;inset:0;z-index:50;background:rgba(15,12,10,.45);display:flex;justify-content:center;align-items:flex-start;padding:10vh 16px 16px}
+.sbox{background:var(--surface);width:100%;max-width:620px;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.sbox input{width:100%;border:0;border-bottom:1px solid var(--line);padding:16px 18px;font-size:17px;background:var(--surface);outline:none}
+.sres{max-height:60vh;overflow:auto}.sres .row{grid-template-columns:110px minmax(0,1fr) auto}
+.skind{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.hist{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+.hist li{font-size:12.5px;color:var(--muted);margin-bottom:6px}.hist li b{color:var(--fg);font-weight:500}
 .e-blk{background:var(--surface);color:var(--muted);border:1px dashed var(--line)}
 @media (min-width:700px){.day{min-height:104px}.day .ev{display:block}.dots{display:none}}
 .cal-nav{display:flex;align-items:center;gap:6px}
@@ -306,6 +319,8 @@ const ICON={
  aankopen:'<path d="M3 4h2l2.5 11h11L21 7H6.2"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',
  inventaris:'<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/>',
  geld:'<path d="M17 6.5A6.5 6.5 0 1 0 17 17.5M4 10h9M4 14h9"/>',
+ kpi:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ zoek:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
  taken:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
  team:'<circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8M14 14.6c.8-.3 1.6-.4 2.5-.4 2.3 0 4.2 1.5 5 4.3"/>',
  partners:'<path d="M8 12l-3 3a2.5 2.5 0 0 0 3.5 3.5l1.5-1.5M16 12l3-3a2.5 2.5 0 0 0-3.5-3.5L14 7M9 15l6-6"/>',
@@ -313,7 +328,7 @@ const ICON={
  meer:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
 const ico=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
-const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
+const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"],["kpi","Cockpit"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
 const MOBILE=["vandaag","agenda","boekingen","geld","meer"];
 const MAAND=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
 const MAANDL=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
@@ -371,7 +386,7 @@ function badge(v){if(!ready)return "";
 function renderNav(){
   const cur=UI.view;const inMeer=!MOBILE.includes(cur);
   let h=`<div class="brand"><span class="logo">PRIMEMOMENTS<i></i></span><small>Headquarter</small></div>
-  <button class="btn newbtn" data-act="new">+ Nieuw</button>`;
+  <button class="btn newbtn" data-act="new">+ Nieuw</button><button class="nav-a d-only" data-search style="background:var(--sand2);border:1px solid var(--line);cursor:pointer;font:inherit;margin:0 4px 6px">${ico("zoek")}<span>Zoeken</span><span style="margin-left:auto;font-size:11px;color:var(--muted)">⌘K</span></button>`;
   NAV.forEach(([g,items])=>{h+=`<div class="grp">${g}</div>`;items.forEach(([k,l])=>{const mob=MOBILE.includes(k);h+=`<a class="nav-a${mob?"":" d-only"}" href="#${k}" ${cur===k?'aria-current="page"':""}>${ico(k)}<span>${k==="geld"?"<span class='m'>Geld</span>":l}</span><span class="cnt">${badge(k)}</span></a>`})});
   h+=`<button class="nav-a d-only" data-logout style="background:none;border:0;cursor:pointer;margin-top:auto;font:inherit">${ico("meer")}<span>Afmelden</span></button>`;
   h+=`<a class="nav-a m-only" href="#meer" ${inMeer?'aria-current="page"':""}>${ico("meer")}<span>Meer</span></a>`;
@@ -594,7 +609,7 @@ V.partners=()=>{const R=[...new Set(S.partners.map(p=>p.rol||"Partner"))];
   ${R.map(r=>`<section class="block"><h2>${esc(r)} <span class="meta">${S.partners.filter(p=>(p.rol||"Partner")===r).length}</span></h2><div class="list">${S.partners.filter(p=>(p.rol||"Partner")===r).map(p=>{const n=S.bookings.filter(b=>(b.fotograaf||"").toLowerCase().includes((p.naam||"").toLowerCase().split(" ")[0])).length;return `<button class="row two" data-edit="partners:${p.id}"><div class="main-t"><div class="t">${esc(p.naam)}</div><div class="d">${[p.contact,p.notitie].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${pill(p.type,"p-neutral")}</div></div><div class="amt">${n?`${n}<small>boekingen</small>`:""}</div></button>`}).join("")}</div></section>`).join("")||`<div class="empty">Nog geen partners.</div>`}`};
 
 V.meer=()=>`<div class="ph"><div><div class="eyebrow">Prime Moments HQ</div><h1>Meer</h1></div><div class="acts"><button class="btn ghost" data-logout>Afmelden</button></div></div>
- <div class="menu">${[["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
+ <div class="menu"><button data-search>${ico("zoek")}<b>Zoeken</b><span>Klanten, boekingen, facturen</span></button>${[["kpi","Cockpit","KPI's, prognose, herkomst"],["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
 
 V.kennisbank=()=>`<div class="ph"><div><div class="eyebrow">Alles op één plek</div><h1>Kennisbank</h1></div></div>
 <div class="kb">
@@ -739,12 +754,102 @@ function crewPage(){const prev=UI.mode==="owner"&&UI.preview;const m=prev?S.team
    ${past.length?`<section class="block"><h2>Voorbije shoots <span class="meta">${past.length}</span></h2><div class="list">${past.slice(0,10).map(card).join("")}</div></section>`:""}
    ${prev?"":`<p class="note"><button class="btn ghost sm" data-crewlogout>Andere code ingeven</button></p>`}</div>`}
 
+/* ================= cockpit ================= */
+const photogName=b=>{const t=(b.team||[]).map(id=>S.team.find(m=>m.id===id)).find(m=>m&&/fotograaf/i.test(m.rol||""));if(t)return t.naam;const f=(b.fotograaf||"").replace(/\(.*?\)/g,"").replace(/^(optie:|voorgesteld:)\s*/i,"").trim();return /via mij|^$/i.test(f)?"Onbekend":f.split(/[ ,–-]/)[0]};
+function monthsAhead(n){const r=[];const d=new Date(now().getFullYear(),now().getMonth(),1);for(let i=0;i<n;i++){r.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);d.setMonth(d.getMonth()+1)}return r}
+V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Set(S.bookings.map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
+  const td=iso(now());const all=S.bookings.filter(b=>b.status!=="Geannuleerd");
+  const Y=yr==="alles"?all.filter(b=>b.datum):all.filter(b=>(b.datum||"").startsWith(yr));
+  const sure=Y.filter(b=>b.status!=="Gereserveerd");const done=Y.filter(b=>b.datum<td&&b.status!=="Gereserveerd");
+  const omz=sure.reduce((a,b)=>a+vid(b),0);const paid=sure.filter(b=>vid(b));const avg=paid.length?omz/paid.length:0;
+  const uren=sure.reduce((a,b)=>a+hours(b),0);const withH=sure.filter(b=>vid(b)&&hours(b));const perH=withH.reduce((a,b)=>a+vid(b),0)/Math.max(1,withH.reduce((a,b)=>a+hours(b),0));
+  const withM=sure.filter(b=>vid(b)&&hours(b)&&+b.montageUren);const perHM=withM.length?withM.reduce((a,b)=>a+vid(b),0)/withM.reduce((a,b)=>a+hours(b)+(+b.montageUren),0):null;
+  const montTot=sure.reduce((a,b)=>a+(+b.montageUren||0),0);
+  const fact=S.invoices.filter(i=>yr==="alles"||(i.datum||"").startsWith(yr)).reduce((a,i)=>a+invTotal(i),0);
+  // photography
+  const F=Y.filter(b=>+b.foto||+b.fotoKost);const fOmz=F.reduce((a,b)=>a+(+b.foto||0),0),fKost=F.reduce((a,b)=>a+(+b.fotoKost||0),0);
+  const byP={};F.forEach(b=>{const n=photogName(b);const o=byP[n]=byP[n]||{n:0,omz:0,kost:0,unk:0};o.n++;o.omz+=+b.foto||0;o.kost+=+b.fotoKost||0;if(!(+b.fotoKost))o.unk++});
+  // forecast
+  const MA=monthsAhead(12);const rec=S.recurring.filter(r=>r.status==="Actief").reduce((a,r)=>a+(+r.bedrag||0),0);
+  const fc=MA.map(k=>{const L=all.filter(b=>(b.datum||"").startsWith(k)&&b.datum>=td);return{k,c:L.filter(b=>b.status!=="Gereserveerd").reduce((a,b)=>a+vid(b),0),r:L.filter(b=>b.status==="Gereserveerd").reduce((a,b)=>a+vid(b),0),rec}});
+  const fsum=n=>fc.slice(0,n).reduce((a,x)=>a+x.c+x.r*0.5+x.rec,0);const fmx=Math.max(1,...fc.map(x=>x.c+x.r+x.rec));
+  // goal
+  const goal=+S.settings.maandDoel||0;const ym=td.slice(0,7);const thisM=all.filter(b=>(b.datum||"").startsWith(ym)&&b.status!=="Gereserveerd").reduce((a,b)=>a+vid(b),0)+rec;
+  // sources
+  const srcB={};Y.filter(b=>vid(b)).forEach(b=>{const k=b.kanaal||(b.doorverwezen?"Via via":"Onbekend");const o=srcB[k]=srcB[k]||{n:0,omz:0};o.n++;o.omz+=vid(b)});
+  const srcL={};S.leads.forEach(l=>{const k=l.teamAanvraag?"Team":(l.kanaal||"Onbekend");const o=srcL[k]=srcL[k]||{a:0,g:0,v:0};o.a++;if(l.status==="Geboekt")o.g++;if(l.status==="Verloren")o.v++});
+  const ref={};Y.forEach(b=>{if(!b.doorverwezen)return;const k=b.doorverwezen.replace(/\s*\(.*?\)/,"").trim();const o=ref[k]=ref[k]||{n:0,omz:0};o.n++;o.omz+=vid(b)});
+  // per type
+  const typ={};sure.forEach(b=>{const t=etype(b);const o=typ[t]=typ[t]||{n:0,omz:0,h:0,hn:0,hv:0};o.n++;o.omz+=vid(b);if(hours(b)&&vid(b)){o.h+=hours(b);o.hv+=vid(b);o.hn++}});
+  // free weekends
+  const fw=MA.slice(0,6).map(k=>{const [y,m]=k.split("-").map(Number);const days=[];const d=new Date(y,m-1,1);while(d.getMonth()===m-1){const ds=iso(d);if((d.getDay()===6||d.getDay()===0)&&ds>=td&&!all.some(b=>b.datum===ds)&&!inBlock(ds))days.push(d.getDate()+(d.getDay()===6?" za":" zo"));d.setDate(d.getDate()+1)}return{k,days}});
+  // top clients
+  const tc={};sure.forEach(b=>{const k=b.klant;tc[k]=(tc[k]||0)+vid(b)});const top=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const needM=all.filter(b=>b.datum&&b.datum<td&&b.status!=="Gereserveerd"&&vid(b)&&b.montageUren==null).sort((a,b)=>b.datum.localeCompare(a.datum)).slice(0,8);
+  const r1=n=>Math.round(n*10)/10;
+  return `<div class="ph"><div><div class="eyebrow">Analyse</div><h1>Cockpit</h1></div><div class="chips" style="margin:0">${years.map(y=>`<button class="chip" data-ky="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}<button class="chip" data-ky="alles" aria-pressed="${yr==="alles"}">Alles</button></div></div>
+  <div class="goal"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><b>Doel ${MAANDL[now().getMonth()]}</b><span class="note" style="margin:0">${goal?`${eur(thisM)} van ${eur(goal)} · ${Math.round(thisM/goal*100)}%`:"Nog geen maanddoel ingesteld"} <button class="copy" data-goal>${goal?"wijzig":"stel in"}</button></span></div>${goal?`<div class="gb"><span style="width:${Math.min(100,thisM/goal*100)}%"></span></div><span class="note" style="margin:0">Video van bevestigde en afgeronde shoots deze maand + vaste klanten</span>`:""}</div>
+  <section class="block"><h2>Video ${yr==="alles"?"":yr} <span class="meta">bevestigd + afgerond</span></h2><div class="kgrid">
+   <div class="tile dark"><div class="k">Omzet video</div><div class="v">${eur(omz)}</div><div class="s">${sure.length} shoots</div></div>
+   <div class="tile"><div class="k">Gefactureerd</div><div class="v">${eur(fact)}</div></div>
+   <div class="tile"><div class="k">Gemiddeld per boeking</div><div class="v">${eur(avg)}</div></div>
+   <div class="tile"><div class="k">Uren gefilmd</div><div class="v">${r1(uren)} u</div><div class="s">${done.length} shoots al gedaan</div></div>
+   <div class="tile"><div class="k">Per uur filmen</div><div class="v">${eur(perH)}</div><div class="s">video ÷ shoot-uren</div></div>
+   <div class="tile ${perHM!=null?"good":""}"><div class="k">Echt uurloon</div><div class="v">${perHM!=null?eur(perHM):"–"}</div><div class="s">${perHM!=null?"incl. "+r1(montTot)+" u montage":"vul montage-uren in"}</div></div>
+  </div></section>
+  <section class="block"><h2>Fotografie <span class="meta">apart, telt niet mee in je omzet</span></h2><div class="kgrid">
+   <div class="tile"><div class="k">Foto betaald door klanten</div><div class="v">${eur(fOmz)}</div><div class="s">${F.length} shoots</div></div>
+   <div class="tile"><div class="k">Betaald aan fotografen</div><div class="v">${eur(fKost)}</div><div class="s">${F.filter(b=>!(+b.fotoKost)).length?F.filter(b=>!(+b.fotoKost)).length+" zonder bedrag":"alles ingevuld"}</div></div>
+   <div class="tile ${fOmz-fKost<0?"bad":"good"}"><div class="k">Wat jij overhoudt</div><div class="v">${eur(fOmz-fKost)}</div></div></div>
+   ${Object.keys(byP).length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Fotograaf</th><th>Shoots</th><th>Klant betaalde</th><th>Fotograaf kreeg</th><th>Verschil</th></tr></thead><tbody>${Object.entries(byP).sort((a,b)=>b[1].kost-a[1].kost||b[1].n-a[1].n).map(([n,o])=>`<tr><td>${esc(n)}</td><td>${o.n}</td><td>${eur(o.omz)}</td><td>${eur(o.kost)}${o.unk?` <span class="note">(${o.unk} niet ingevuld)</span>`:""}</td><td>${eur(o.omz-o.kost)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Nog geen shoots met fotografie in deze periode.</div>`}
+   <p class="note">Vul per boeking <b>Fotograaf krijgt (€)</b> in, dan zie je wat elke fotograaf van jou verdiende.</p></section>
+  <section class="block"><h2>Prognose <span class="meta">komende 12 maanden</span></h2><div class="kgrid">
+   <div class="tile dark"><div class="k">Komende 3 maanden</div><div class="v">${eur(fsum(3))}</div></div><div class="tile"><div class="k">Komende 6 maanden</div><div class="v">${eur(fsum(6))}</div></div><div class="tile"><div class="k">Komende 12 maanden</div><div class="v">${eur(fsum(12))}</div></div></div>
+   <div class="chart"><div class="bars">${fc.map(x=>{const t=x.c+x.r+x.rec;return `<div class="bar" style="cursor:default"><span class="val">${t?eur(t).replace("€ ","€"):""}</span>${x.r?`<span class="seg r" style="height:${x.r/fmx*150}px"></span>`:""}${x.rec?`<span class="seg" style="height:${x.rec/fmx*150}px;background:var(--info)"></span>`:""}${x.c?`<span class="seg c" style="height:${x.c/fmx*150}px"></span>`:""}</div>`}).join("")}</div><div class="mlabels">${fc.map(x=>`<span>${MAAND[+x.k.slice(5,7)-1]}</span>`).join("")}</div></div>
+   <div class="legend"><span><i style="background:var(--accent)"></i>Bevestigd</span><span><i style="background:color-mix(in srgb,var(--warn) 50%,var(--surface))"></i>Gereserveerd (telt voor 50%)</span><span><i style="background:var(--info)"></i>Vaste klanten</span></div></section>
+  <div class="cols"><div>
+   <section class="block"><h2>Per type event <span class="meta">${yr==="alles"?"alles":yr}</span></h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Type</th><th>Shoots</th><th>Omzet</th><th>Gem.</th><th>€/uur</th></tr></thead><tbody>${Object.entries(typ).sort((a,b)=>b[1].omz-a[1].omz).map(([t,o])=>`<tr><td>${esc(t)}</td><td>${o.n}</td><td>${eur(o.omz)}</td><td>${eur(o.omz/Math.max(1,o.n))}</td><td>${o.h?eur(o.hv/o.h):"–"}</td></tr>`).join("")}</tbody></table></div></section>
+   <section class="block"><h2>Waar je klanten vandaan komen</h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Kanaal</th><th>Boekingen</th><th>Omzet</th><th>Aanvragen</th><th>Omgezet</th></tr></thead><tbody>${[...new Set([...Object.keys(srcB),...Object.keys(srcL)])].sort((a,b)=>((srcB[b]||{}).omz||0)-((srcB[a]||{}).omz||0)).map(k=>{const b=srcB[k]||{n:0,omz:0},l=srcL[k]||{a:0,g:0,v:0};return `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${eur(b.omz)}</td><td>${l.a}</td><td>${l.g+l.v?Math.round(l.g/(l.g+l.v)*100)+"%":"–"}</td></tr>`}).join("")}</tbody></table></div>
+    ${Object.keys(ref).length?`<div class="list" style="margin-top:10px"><div class="kv">${Object.entries(ref).sort((a,b)=>b[1].omz-a[1].omz).map(([k,o])=>`<span>Doorverwezen door <b>${esc(k)}</b> · ${o.n}×</span><b>${eur(o.omz)}</b>`).join("")}</div></div>`:""}<p class="note">Vul bij elke boeking <b>Via</b> en <b>Doorverwezen door</b> in, dan wordt dit steeds juister.</p></section>
+  </div><div>
+   <section class="block"><h2>Vrije weekenddagen <span class="meta">komende 6 maanden</span></h2><div class="list"><div class="kv" style="grid-template-columns:90px 1fr">${fw.map(x=>`<span>${cap(MAANDL[+x.k.slice(5,7)-1])}</span><div class="wk">${x.days.length?x.days.map(d=>`<span>${d}</span>`).join(""):`<span style="background:var(--bad-bg);color:var(--bad)">volgeboekt</span>`}</div>`).join("")}</div></div></section>
+   <section class="block"><h2>Top klanten <span class="meta">video</span></h2><div class="list"><div class="kv">${top.map(([k,v])=>`<span>${esc(k)}</span><b>${eur(v)}</b>`).join("")||"<span>–</span>"}</div></div></section>
+   <section class="block"><h2>Montage-uren invullen <span class="meta">${needM.length}</span></h2>${needM.length?`<div class="list">${needM.map(b=>`<div class="row" style="grid-template-columns:minmax(0,1fr) auto;cursor:default"><div class="main-t"><div class="t">${esc(b.klant)}</div><div class="d">${dl_(b.datum)}${b.event?" · "+esc(b.event):""}</div></div><div><input class="minput" type="number" min="0" step="0.5" inputmode="decimal" placeholder="uren" data-mont="${b.id}" aria-label="Montage-uren ${esc(b.klant)}"></div></div>`).join("")}</div><p class="note">Typ het aantal uur en tik ernaast. Het wordt meteen bewaard.</p>`:`<div class="empty">Alles ingevuld.</div>`}</section>
+  </div></div>`};
+
+/* ================= search ================= */
+function openSearch(){if($(".sbar"))return;const w=document.createElement("div");w.className="sbar";w.innerHTML=`<div class="sbox" role="dialog" aria-label="Zoeken"><input id="sq" placeholder="Zoek klant, telefoon, factuur, leverancier…" autocomplete="off"><div class="sres" id="sres"></div></div>`;document.body.appendChild(w);
+  const inp=$("#sq");inp.focus();const close=()=>w.remove();
+  const kinds=[["bookings","Boeking",b=>[b.klant,b.namen,b.event,b.locatie,b.contact,b.notitie,b.fotograaf,b.datum&&dl_(b.datum)],b=>`${esc(b.klant)}${b.event?" · "+esc(b.event):""}`,b=>dl_(b.datum)],
+   ["leads","Aanvraag",l=>[l.naam,l.event,l.contact,l.notitie],l=>esc(l.naam),l=>esc(l.status||"")],
+   ["invoices","Factuur",i=>[i.nummer,i.klant,i.klantInfo],i=>`${esc(i.nummer)} · ${esc(i.klant)}`,i=>eur2(invTotal(i))],
+   ["purchases","Aankoop",p=>[p.leverancier,p.omschrijving,p.factuurnr],p=>`${esc(p.leverancier)} · ${esc(p.omschrijving||"")}`,p=>eur2(p.bedrag)],
+   ["companies","Bedrijf",c=>[c.naam,c.handelsnaam,c.btw,c.mail,c.contact],c=>esc(c.naam),c=>esc(c.btw||"")],
+   ["inventory","Materiaal",i=>[i.item,i.merk,i.serienummer],i=>`${esc(i.merk||"")} ${esc(i.item)}`,i=>eur(i.prijs)],
+   ["team","Team",m=>[m.naam,m.code,m.contact],m=>esc(m.naam),m=>esc(m.rol||"")],["partners","Partner",p=>[p.naam,p.contact,p.notitie],p=>esc(p.naam),p=>esc(p.rol||"")],
+   ["tasks","Taak",t=>[t.titel,t.notitie],t=>esc(t.titel),t=>t.klaar?"klaar":"open"]];
+  const draw=()=>{const q=inp.value.trim().toLowerCase();const out=[];if(q.length>=2)kinds.forEach(([c,lab,fields,title,right])=>S[c].forEach(x=>{if(fields(x).filter(Boolean).join(" ").toLowerCase().includes(q))out.push(`<button class="row" data-sopen="${c}:${x.id}"><span class="skind">${lab}</span><div class="main-t"><div class="t">${title(x)}</div></div><div class="amt"><small>${right(x)||""}</small></div></button>`)}));
+    $("#sres").innerHTML=q.length<2?`<div class="empty" style="border:0">Typ minstens 2 letters</div>`:out.slice(0,40).join("")||`<div class="empty" style="border:0">Niets gevonden voor "${esc(inp.value)}"</div>`};
+  inp.addEventListener("input",draw);draw();
+  w.addEventListener("keydown",e=>{if(e.key==="Escape")close();if(e.key==="Enter"){const f=w.querySelector("[data-sopen]");if(f)f.click()}});
+  w.addEventListener("click",e=>{if(e.target===w)return close();const o=e.target.closest("[data-sopen]");if(!o)return;const [c,id]=o.dataset.sopen.split(":");close();if(c==="invoices")openInvoice(id);else openForm(c,id)})}
+document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openSearch()}});
+
+/* ================= history ================= */
+const FLABEL={klant:"klant",event:"event",datum:"datum",status:"status",start:"start",eind:"einde",locatie:"locatie",video:"video",foto:"foto",fotoKost:"fotograaf krijgt",betaling:"betaling",ontvangen:"ontvangen",team:"team",teamNotitie:"teamnotitie",notitie:"notities",fotograaf:"fotograaf",contact:"contact",levering:"levering",montageUren:"montage-uren",naam:"naam",prijs:"offerte"};
+function histVal(k,v){if(v==null||v==="")return "leeg";if(k==="team"&&Array.isArray(v))return v.map(id=>tName(id)).join(", ")||"niemand";if(Array.isArray(v)||typeof v==="object")return "…";const s=String(v);return s.length>40?s.slice(0,40)+"…":s}
+async function loadHistory(col,id,el){try{const {data,error}=await SB.from("docs_history").select("action,changes,at,by_user").eq("collection",col).eq("doc_id",id).order("at",{ascending:false}).limit(25);if(error)throw error;
+  if(!data.length){el.innerHTML=`<p class="note">Nog geen wijzigingen bijgehouden. Vanaf nu wordt elke wijziging hier bewaard.</p>`;return}
+  el.innerHTML=`<ul style="padding-left:16px;margin:6px 0">${data.map(h=>{const t=new Date(h.at).toLocaleString("nl-BE",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});const who=h.by_user?"":" (door team-app)";
+    if(h.action==="nieuw")return `<li><b>${t}</b> · aangemaakt${who}</li>`;
+    return `<li><b>${t}</b>${who} · ${Object.entries(h.changes||{}).map(([k,v])=>`${esc(FLABEL[k]||k)}: ${esc(histVal(k,v.van))} → ${esc(histVal(k,v.naar))}`).join(" · ")}</li>`}).join("")}</ul>`}catch(_){el.innerHTML=`<p class="note">Historiek kon niet geladen worden.</p>`}}
+
 /* ================= forms ================= */
 const STAT=["Gereserveerd","Bevestigd","Afgerond","Geannuleerd"];
 const FORMS={
  bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["status","Status","select",0,STAT],["start","Van","time"],["eind","Tot","time"],["categorie","Categorie","select",0,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","text"],["locatie","Locatie","text",1],
-  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["foto","Foto (€, telt niet mee)","number"],["betaling","Betaalstatus","select",0,["Open","Voorschot","Betaald","Te checken"]],["ontvangen","Al ontvangen (€)","number"],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
-  ["_","Contact & team","sec"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["levering","Levering","select",0,["Nog te filmen","In montage","Afgeleverd"]],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["notitie","Notities (alleen voor jou)","textarea",1]]},
+  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["foto","Foto (€, telt niet mee)","number"],["fotoKost","Fotograaf krijgt (€)","number"],["betaling","Betaalstatus","select",0,["Open","Voorschot","Betaald","Te checken"]],["ontvangen","Al ontvangen (€)","number"],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
+  ["_","Contact & team","sec"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["levering","Levering","select",0,["Nog te filmen","In montage","Afgeleverd"]],["montageUren","Montage-uren (jouw tijd)","number"],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["notitie","Notities (alleen voor jou)","textarea",1]]},
  team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Helper","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
  leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via","Team"]],["event","Event","text"],["datum","Gevraagde datum","date"],["start","Van","time"],["eind","Tot","time"],["locatie","Locatie","text",1],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
  tasks:{t:"Taak",f:[["titel","Taak","text",1],["deadline","Tegen","date"],["klaar","Klaar","check"],["notitie","Notitie","textarea",1]]},
@@ -773,8 +878,10 @@ function openForm(col,id,preset){
     if(t==="team")return `<div class="f full"><label>${l}</label><div class="teamchecks">${S.team.filter(m=>m.actief!==false||(v||[]).includes(m.id)).map(m=>`<label><input type="checkbox" name="team" value="${esc(m.id)}" ${(v||[]).includes(m.id)?"checked":""}>${esc(m.code||m.naam)}${m.code&&m.naam&&m.naam!==m.code?` <span style="color:var(--muted)">${esc(m.naam)}</span>`:""}</label>`).join("")||`<span class="hint">Voeg eerst teamleden toe bij Team.</span>`}</div></div>`;
     if(t==="check")return `<div class="f check full"><input type="checkbox" id="${fid}" name="${k}" ${v?"checked":""}><label for="${fid}">${l}</label></div>`;
     return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><input id="${fid}" name="${k}" type="${t}" value="${esc(v)}"${t==="number"?' inputmode="decimal" step="any"':""}></div>`}).join("")}</div>
+   ${id?`<details class="hist"><summary style="cursor:pointer;font-size:13px;color:var(--muted)">Historiek</summary><div data-histbox>Laden…</div></details>`:""}
    <div class="actions"><div>${id&&canWrite?`<button type="button" class="btn danger" data-del>Verwijder</button>`:""}${col==="leads"&&id&&canWrite?`<button type="button" class="btn ghost" data-tobook>Maak boeking</button>`:""}${col==="bookings"&&id&&canWrite?`<button type="button" class="btn ghost" data-toinv>Maak factuur</button>`:""}</div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button class="btn">Bewaar</button>`:""}</div></div></form>`;
   const {sc,close}=openSheet(html);const form=sc.querySelector("form");let armed=false;
+  const hd=sc.querySelector("details.hist");if(hd)hd.addEventListener("toggle",()=>{if(hd.open&&!hd.dataset.l){hd.dataset.l=1;loadHistory(col,id,sc.querySelector("[data-histbox]"))}});
   if(col==="invoices"&&!id){const d=form.elements.datum,v=form.elements.vervaldatum;d.addEventListener("change",()=>{v.value=addDays(d.value,7)})}
   sc.addEventListener("click",e=>{
     const del=e.target.closest("[data-del]");if(del){if(!armed){armed=true;del.textContent="Zeker? Tik opnieuw";return}remove(col,id).then(close)}
@@ -879,6 +986,9 @@ document.addEventListener("click",async e=>{
   if(e.target.closest(".scrim"))return;
   if(e.target.closest("[data-goaandacht]")){UI.bFilter="aandacht";UI.bSearch="";return}
   if(e.target.closest("[data-gcal]"))return openGcal();
+  if(e.target.closest("[data-search]"))return openSearch();
+  const ky=e.target.closest("[data-ky]");if(ky){UI.kYear=ky.dataset.ky;return render()}
+  if(e.target.closest("[data-goal]")){const {sc,close}=openSheet(`<form><h3>Maanddoel</h3><div class="f"><label for="f-goal">Hoeveel video-omzet wil je per maand halen? (€)</label><input id="f-goal" type="number" inputmode="decimal" value="${esc(S.settings.maandDoel||"")}"></div><div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button><button class="btn">Bewaar</button></div></div></form>`);sc.querySelector("form").addEventListener("submit",async ev=>{ev.preventDefault();const g=+sc.querySelector("#f-goal").value||0;try{await db.doc("settings/finance").update({maandDoel:g});S.settings.maandDoel=g;toast("Bewaard");close();render()}catch(_){toast("Bewaren mislukt")}});return}
   const tt_=e.target.closest("[data-tt]");if(tt_){UI.tt=tt_.dataset.tt;return render()}
   const tay=e.target.closest("[data-tay]");if(tay){UI.taYear=tay.dataset.tay;return render()}
   if(e.target.closest("[data-endpreview]")){UI.preview=null;CREW.un.forEach(f=>{try{f()}catch(_){}});CREW.un=[];location.hash="team";return render()}
@@ -905,7 +1015,8 @@ document.addEventListener("click",async e=>{
   if(t.dataset.csv)return csv(t.dataset.csv);
   if(t.dataset.copy){const el=document.getElementById(t.dataset.copy);try{await navigator.clipboard.writeText(el.textContent);toast("Gekopieerd")}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Geselecteerd, kopieer met je toetsenbord")}}
 });
-document.addEventListener("change",e=>{const c=e.target.closest("[data-tk]");if(c&&db){db.doc("tasks/"+c.dataset.tk).update({klaar:c.checked}).catch(()=>toast("Bewaren mislukt"))}});
+document.addEventListener("change",e=>{const mi=e.target.closest("[data-mont]");if(mi&&mi.value!==""){db.doc("bookings/"+mi.dataset.mont).update({montageUren:+mi.value}).then(()=>toast("Montage-uren bewaard")).catch(()=>toast("Bewaren mislukt"));return}
+  const c=e.target.closest("[data-tk]");if(c&&db){db.doc("tasks/"+c.dataset.tk).update({klaar:c.checked}).catch(()=>toast("Bewaren mislukt"))}});
 document.addEventListener("submit",e=>{const cc=e.target.closest("[data-crewcode]");if(cc){e.preventDefault();const v=cc.querySelector("input").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");if(v.length!==12){UI.crewErr="Een code heeft 12 tekens, bv. ABCD-EFGH-JKLM.";return render()}const k=v.slice(0,4)+"-"+v.slice(4,8)+"-"+v.slice(8);UI.crewErr="";lsSet(k);watchCrew(k);return}
   const f=e.target.closest("[data-addtask]");if(!f)return;e.preventDefault();const i=f.querySelector("input");const v=i.value.trim();if(!v)return;i.value="";save("tasks",null,{titel:v,klaar:false})});
 document.addEventListener("input",e=>{if(e.target.id==="bsearch"){UI.bSearch=e.target.value;render()}if(e.target.id==="ksearch"){UI.kSearch=e.target.value;render()}});
