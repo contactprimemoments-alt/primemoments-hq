@@ -430,11 +430,14 @@ function toast(t){document.querySelectorAll(".toast").forEach(e=>e.remove());con
 /* ================= business logic ================= */
 const toReceive=b=>{if(b.status==="Geannuleerd"||b.status==="On hold"||b.status==="Gereserveerd"||b.betaling==="Betaald"||b.betaling==="Te checken")return 0;return Math.max(0,vid(b)-(+b.ontvangen||0))};
 function sameDay(b){if(!b.datum||b.status==="Geannuleerd")return [];return S.bookings.filter(o=>o.id!==b.id&&o.datum===b.datum&&o.status!=="Geannuleerd")}
+const tmin=t=>{if(!t||!/^\d\d:\d\d/.test(t))return null;return +t.slice(0,2)*60+ +t.slice(3,5)};
+function overlap(b){const s1=tmin(b.start);if(s1===null)return false;let e1=tmin(b.eind);if(e1===null)e1=s1+60;if(e1<=s1)e1+=1440;
+  return sameDay(b).some(o=>{const s2=tmin(o.start);if(s2===null)return false;let e2=tmin(o.eind);if(e2===null)e2=s2+60;if(e2<=s2)e2+=1440;return s1<e2&&s2<e1})}
 function flags(b){const f=[];if(b.status==="Geannuleerd"||b.status==="On hold")return f;const dt=daysTo(b.datum);
   if(!b.datum)f.push("Datum ontbreekt");
   if(dt!==null&&dt<0&&b.status==="Gereserveerd")f.push("Doorgegaan?");
   if(!b.video&&!b.gratis&&b.status!=="Geannuleerd")f.push("Prijs ontbreekt");
-  if(dt!==null&&dt>=0&&sameDay(b).length)f.push("2 shoots die dag");
+  if(dt!==null&&dt>=0&&overlap(b))f.push("Overlapt met andere shoot");
   if(dt!==null&&dt>=0&&inBlock(b.datum))f.push("Valt in "+inBlock(b.datum).titel);
   return f}
 function inBlock(ds){return S.blocks.find(k=>k.van&&ds>=k.van&&ds<=(k.tot||k.van))}
