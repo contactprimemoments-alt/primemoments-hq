@@ -345,6 +345,9 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .sd-it input:checked+span{text-decoration:line-through;color:var(--muted)}
 .sd-add{display:flex;gap:8px;margin-top:10px}.sd-add input{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);font:inherit;font-size:16px;min-width:0}
 .sd-open{margin-top:14px;width:100%}
+.seg.fx{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--surface)) 0 4px,color-mix(in srgb,var(--accent) 15%,var(--surface)) 4px 8px);border-radius:4px 4px 0 0}
+.legend i.fxl{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--surface)) 0 3px,color-mix(in srgb,var(--accent) 15%,var(--surface)) 3px 6px)}
+.fcx{margin-top:12px;font-size:13px}.fcx summary{cursor:pointer;color:var(--muted)}.fcx ul{margin:10px 0 0;padding-left:18px;display:grid;gap:6px}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -863,6 +866,51 @@ function crewPage(){const prev=UI.mode==="owner"&&UI.preview;const m=prev?S.team
 
 /* ================= cockpit ================= */
 const photogName=b=>{const t=(b.team||[]).map(id=>S.team.find(m=>m.id===id)).find(m=>m&&/fotograaf/i.test(m.rol||""));if(t)return t.naam;const f=(b.fotograaf||"").replace(/\(.*?\)/g,"").replace(/^(optie:|voorgesteld:)\s*/i,"").trim();return /via mij|^$/i.test(f)?"Onbekend":f.split(/[ ,–-]/)[0]};
+/* ================= verwachting (realistische prognose) ================= */
+const SEASON=[0.5,0.5,0.7,1.0,1.2,1.3,1.4,1.4,1.2,1.0,0.9,0.6]; // jan..dec, Turkse/Belgische trouwmarkt
+const SCEN={voorzichtig:{g:0,f:0.85,lab:"Voorzichtig"},realistisch:{g:0.03,f:1,lab:"Realistisch"},ambitieus:{g:0.06,f:1.1,lab:"Ambitieus"}};
+function expertForecast(scKey){const sc=SCEN[scKey]||SCEN.realistisch;const td=iso(now());const B=S.bookings.filter(b=>b.status!=="Geannuleerd"&&b.status!=="On hold"&&b.datum);
+  const ymOf=d=>d.slice(0,7);const sumM=(k,pred)=>B.filter(b=>ymOf(b.datum)===k&&(!pred||pred(b))).reduce((a,b)=>a+vid(b),0);
+  const rec=S.recurring.filter(r=>r.status==="Actief").reduce((a,r)=>a+(+r.bedrag||0),0);
+  const mk=(y,m)=>`${y}-${String(m+1).padStart(2,"0")}`;const n0=now();
+  // basis: mediaan van seizoensgecorrigeerde omzet (laatste 3 maanden gerealiseerd + deze en volgende maand geboekt)
+  const pts=[];for(let i=-3;i<=1;i++){const d=new Date(n0.getFullYear(),n0.getMonth()+i,1);const k=mk(d.getFullYear(),d.getMonth());const v=sumM(k);if(v>0)pts.push(v/SEASON[d.getMonth()])}
+  pts.sort((a,b)=>a-b);const base=pts.length?pts[Math.floor((pts.length-1)/2)]:0;
+  const paid=B.filter(b=>vid(b)>0);const avg=paid.length?paid.reduce((a,b)=>a+vid(b),0)/paid.length:0;
+  const maxShoots=+(S.settings.maxShoots||8);const cap=maxShoots*avg;
+  const months=[];const so=n0.getDate()>=25?1:0;const start=new Date(n0.getFullYear(),n0.getMonth()+so,1);const endY=n0.getFullYear()+1;
+  for(let i=0;;i++){const d=new Date(start.getFullYear(),start.getMonth()+i,1);if(d.getFullYear()>endY)break;const k=mk(d.getFullYear(),d.getMonth());
+    const booked=B.filter(b=>ymOf(b.datum)===k&&b.datum>=td).reduce((a,b)=>a+vid(b)*(b.status==="Gereserveerd"?0.5:1),0);
+    const cur=i===0&&!so;const done=cur?B.filter(b=>ymOf(b.datum)===k&&b.datum<td).reduce((a,b)=>a+vid(b),0):0;const left=cur?Math.max(0,1-n0.getDate()/30):1;
+    const model=Math.min(cap||Infinity,base*SEASON[d.getMonth()]*sc.f*Math.pow(1+sc.g,i+so));
+    const extra=Math.max(0,model-booked-done)*left;months.push({k,y:d.getFullYear(),m:d.getMonth(),booked,extra,rec:rec*left})}
+  return {months,base,avg,cap,maxShoots,rec,sc}}
+function fcBlock(){const sk=UI.fcScen||"realistisch";const F=expertForecast(sk);const M=F.months;const tot=x=>x.booked+x.extra+x.rec;
+  const yNow=now().getFullYear();const restY=M.filter(x=>x.y===yNow).reduce((a,x)=>a+tot(x),0);const next12=M.slice(0,12).reduce((a,x)=>a+tot(x),0);
+  const Y1=M.filter(x=>x.y===yNow+1);const y1=Y1.reduce((a,x)=>a+tot(x),0);const y1b=Y1.reduce((a,x)=>a+x.booked,0);
+  const mx=Math.max(1,...M.map(tot));const best=Y1.slice().sort((a,b)=>tot(b)-tot(a))[0];
+  return `<section class="block"><h2>Verwachting <span class="meta">geboekt + wat er realistisch nog bijkomt</span></h2>
+   <div class="chips" style="margin-bottom:12px">${Object.entries(SCEN).map(([k,v])=>`<button class="chip" data-scen="${k}" aria-pressed="${k===sk}">${v.lab}</button>`).join("")}</div>
+   <div class="kgrid">
+    <div class="tile dark"><div class="k">Rest van ${yNow}</div><div class="v">${eur(restY)}</div></div>
+    <div class="tile"><div class="k">Volgende 12 maanden</div><div class="v">${eur(next12)}</div></div>
+    <div class="tile"><div class="k">Heel ${yNow+1}</div><div class="v">${eur(y1)}</div><div class="s">${eur(y1b)} al geboekt</div></div>
+    <div class="tile"><div class="k">Gemiddeld per maand ${yNow+1}</div><div class="v">${eur(y1/12)}</div><div class="s">${best?"beste maand: "+MAANDL[best.m]:""}</div></div>
+   </div>
+   <div class="chart"><div class="bars" style="grid-template-columns:repeat(${M.length},minmax(34px,1fr));min-width:${M.length*40}px">${M.map(x=>`<div class="bar" style="cursor:default" title="${MAANDL[x.m]} ${x.y}: geboekt ${eur(x.booked)}, verwacht extra ${eur(x.extra)}${x.rec?", vaste klanten "+eur(x.rec):""}"><span class="val">${eur(tot(x)).replace("€ ","€")}</span>${x.extra?`<span class="seg fx" style="height:${x.extra/mx*150}px"></span>`:""}${x.rec?`<span class="seg" style="height:${x.rec/mx*150}px;background:var(--info)"></span>`:""}${x.booked?`<span class="seg c" style="height:${x.booked/mx*150}px"></span>`:""}</div>`).join("")}</div>
+   <div class="mlabels" style="grid-template-columns:repeat(${M.length},minmax(34px,1fr));min-width:${M.length*40}px">${M.map(x=>`<span>${MAAND[x.m]}${x.m===0?" '"+String(x.y).slice(2):""}</span>`).join("")}</div></div>
+   <div class="legend"><span><i style="background:var(--accent)"></i>Al geboekt</span><span><i class="fxl"></i>Verwacht extra</span><span><i style="background:var(--info)"></i>Vaste klanten</span></div>
+   <details class="fcx"><summary>Hoe wordt dit berekend?</summary><ul>
+    <li><b>Al geboekt:</b> je bevestigde boekingen, en gereserveerde voor de helft. Fotografie en "on hold" tellen niet mee.</li>
+    <li><b>Jouw tempo:</b> je HQ kijkt naar je omzet van de laatste maanden en de maanden die al vol staan, gecorrigeerd voor het seizoen. Jouw basis is nu ${eur(F.base)} per "gewone" maand.</li>
+    <li><b>Seizoen:</b> trouwseizoen mei–september telt zwaarder (tot ×1,4), januari–februari en de ramadan zijn rustig (×0,5), december is rustig (×0,6).</li>
+    <li><b>Groei:</b> ${F.sc.lab.toLowerCase()} = ${Math.round(F.sc.g*100)}% groei per maand${F.sc.f!==1?`, ×${F.sc.f}`:""}. Je zaak is nieuw en groeit via mond-tot-mondreclame en Gül.</li>
+    <li><b>Jouw capaciteit:</b> max. ${F.maxShoots} shoots per maand × je gemiddelde prijs (${eur(F.avg)}) = max. ${eur(F.cap)} per maand. Je werkt immers ook nog bij Ravago. Aanpassen kan hier: <input class="minput" type="number" min="1" max="20" value="${F.maxShoots}" data-maxshoots aria-label="Max shoots per maand"> shoots per maand.</li>
+    <li>Staat er al meer geboekt dan het model verwacht, dan telt wat geboekt is.</li>
+    <li>Dit is een inschatting, geen garantie. Hoe langer je HQ gebruikt, hoe preciezer het wordt.</li></ul></details>
+  </section>`}
+document.addEventListener("click",e=>{const s=e.target.closest("[data-scen]");if(s){UI.fcScen=s.dataset.scen;render()}});
+document.addEventListener("change",async e=>{const i=e.target.closest("[data-maxshoots]");if(!i)return;const v=Math.max(1,Math.min(20,+i.value||8));S.settings.maxShoots=v;try{await db.doc("settings/finance").update({maxShoots:v})}catch(err){}render()});
 function monthsAhead(n){const r=[];const d=new Date(now().getFullYear(),now().getMonth(),1);for(let i=0;i<n;i++){r.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);d.setMonth(d.getMonth()+1)}return r}
 V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Set(S.bookings.map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
   const td=iso(now());const all=S.bookings.filter(b=>b.status!=="Geannuleerd");
@@ -914,6 +962,7 @@ V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Se
    <div class="tile dark"><div class="k">Komende 3 maanden</div><div class="v">${eur(fsum(3))}</div></div><div class="tile"><div class="k">Komende 6 maanden</div><div class="v">${eur(fsum(6))}</div></div><div class="tile"><div class="k">Komende 12 maanden</div><div class="v">${eur(fsum(12))}</div></div></div>
    <div class="chart"><div class="bars">${fc.map(x=>{const t=x.c+x.r+x.rec;return `<div class="bar" style="cursor:default"><span class="val">${t?eur(t).replace("€ ","€"):""}</span>${x.r?`<span class="seg r" style="height:${x.r/fmx*150}px"></span>`:""}${x.rec?`<span class="seg" style="height:${x.rec/fmx*150}px;background:var(--info)"></span>`:""}${x.c?`<span class="seg c" style="height:${x.c/fmx*150}px"></span>`:""}</div>`}).join("")}</div><div class="mlabels">${fc.map(x=>`<span>${MAAND[+x.k.slice(5,7)-1]}</span>`).join("")}</div></div>
    <div class="legend"><span><i style="background:var(--accent)"></i>Bevestigd</span><span><i style="background:color-mix(in srgb,var(--warn) 50%,var(--surface))"></i>Gereserveerd (telt voor 50%)</span><span><i style="background:var(--info)"></i>Vaste klanten</span></div></section>
+  ${fcBlock()}
   <div class="cols"><div>
    <section class="block"><h2>Per type event <span class="meta">${yr==="alles"?"alles":yr}</span></h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Type</th><th>Shoots</th><th>Omzet</th><th>Gem.</th><th>€/uur</th></tr></thead><tbody>${Object.entries(typ).sort((a,b)=>b[1].omz-a[1].omz).map(([t,o])=>`<tr><td>${esc(t)}</td><td>${o.n}</td><td>${eur(o.omz)}</td><td>${eur(o.omz/Math.max(1,o.n))}</td><td>${o.h?eur(o.hv/o.h):"–"}</td></tr>`).join("")}</tbody></table></div></section>
    <section class="block"><h2>Waar je klanten vandaan komen</h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Kanaal</th><th>Boekingen</th><th>Omzet</th><th>Aanvragen</th><th>Omgezet</th></tr></thead><tbody>${[...new Set([...Object.keys(srcB),...Object.keys(srcL)])].sort((a,b)=>((srcB[b]||{}).omz||0)-((srcB[a]||{}).omz||0)).map(k=>{const b=srcB[k]||{n:0,omz:0},l=srcL[k]||{a:0,g:0,v:0};return `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${eur(b.omz)}</td><td>${l.a}</td><td>${l.g+l.v?Math.round(l.g/(l.g+l.v)*100)+"%":"–"}</td></tr>`}).join("")}</tbody></table></div>
