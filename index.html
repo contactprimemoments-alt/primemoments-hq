@@ -291,6 +291,27 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .ie-more{margin-top:14px}.ie-more summary{cursor:pointer;font-size:13px;color:var(--muted);margin-bottom:10px}
 .ietot{display:flex;flex-direction:column;justify-content:center}.ietot span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.ietot b{font-family:var(--display);font-size:22px;font-weight:600}
 @media (max-width:640px){.ie .f input,.ie .f select,.ie .f textarea,.ln input{font-size:16px}.ie .fgrid{grid-template-columns:1fr 1fr}.ie .f.full{grid-column:1/-1}}
+.rowq{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-top:1px solid var(--line)}
+.list>.rowq:first-child{border-top:0}.rowq .row{border-top:0}
+.qbtn{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 11px;margin-right:12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;color:var(--ok)}
+.qbtn:disabled{opacity:.5}
+@media (max-width:640px){.rowq{grid-template-columns:1fr}.rowq .qbtn{justify-self:end;margin:-6px 14px 12px 0}}
+.vmini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 22px}
+.vmini a{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;text-decoration:none;color:var(--fg)}
+.vmini span{font-size:11.5px;color:var(--muted)}.vmini b{font-family:var(--display);font-size:20px;font-weight:600}.vmini a.bad b{color:var(--bad)}
+.qseg{flex-wrap:wrap;margin:0}
+.bo .eyebrow{margin-bottom:4px}
+.bo-qa{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.bo-qa .btn{text-decoration:none}
+.bo-facts{display:grid;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:6px 0 4px}
+.bo-f{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;font-size:14px;align-items:start}
+.bo-sec{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.bo-money{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:16px}
+.bo-money div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.bo-money span{font-size:11.5px;color:var(--muted)}.bo-money b{font-family:var(--display);font-size:19px;font-weight:600}
+.bo-note{white-space:pre-wrap;font-size:14px;background:var(--bg);border-radius:12px;padding:10px 12px;margin:0}
+.pakrow{display:flex;align-items:center;gap:10px;margin-top:8px}.pakrow[hidden]{display:none}
+.fmore{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.fmore summary{cursor:pointer;font-size:13px;color:var(--muted);margin-bottom:12px}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -421,7 +442,8 @@ function rowB(b,opt={}){const d=pd(b.datum);const fl=opt.noFlags?[]:flags(b);
    <div class="main-t"><div class="t">${esc(b.klant)}${b.event?` <span style="color:var(--muted);font-weight:400">· ${esc(b.event)}</span>`:""}</div>
     <div class="d">${[b.start?(b.eind?`${esc(b.start)}–${esc(b.eind)}`:esc(b.start)):"",esc(b.locatie||"")].filter(Boolean).join(" · ")}</div>
     <div class="pills">${pill(b.status)}${teamChips(b)}${fl.map(f=>pill(f,"p-bad")).join("")}${b.betaling==="Betaald"?pill("Betaald"):b.betaling==="Voorschot"?pill("Voorschot"):""}${b.levering==="In montage"?pill("In montage","p-In-montage"):""}</div></div>
-   <div class="amt">${b.video?eur(b.video):(b.gratis?"<small>gratis</small>":"–")}${b.foto?`<small>+ foto ${eur(b.foto)}</small>`:""}</div></button>`}
+   <div class="amt">${b.video?eur(b.video):(b.gratis?"<small>gratis</small>":"–")}${b.foto?`<small>+ foto ${eur(b.foto)}</small>`:""}</div></button>`;}
+function rowQ(b,kind){const lab=kind==="lev"?"✓ Afgeleverd":"✓ Betaald";return `<div class="rowq">${rowB(b,{noFlags:1})}${canWrite?`<button type="button" class="qbtn" data-q="${kind}:${b.id}">${lab}</button>`:""}</div>`}
 function rowInv(i){const st=invStatus(i);return `<button class="row" data-inv="${i.id}">
   <div class="date"><b style="font-size:15px">${esc((i.nummer||"").split("-")[1]||"?")}</b><span>${esc((i.nummer||"").split("-")[0]||"")}</span></div>
   <div class="main-t"><div class="t">${esc(i.klant)}</div><div class="d">${esc(i.type||"Factuur")} · ${dl_(i.datum)}${st!=="Betaald"&&i.vervaldatum?" · vervalt "+dl_(i.vervaldatum):""}</div><div class="pills">${pill(st)}</div></div>
@@ -451,16 +473,12 @@ V.vandaag=()=>{
   return imp+teamNews()+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
   ${nx?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
    <div><div class="lbl">Volgende shoot · ${new Date(pd(nx.datum)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?(nx.eind?nx.start+"–"+nx.eind:nx.start):"",nx.locatie||"",nx.fotograaf?"Fotograaf: "+nx.fotograaf:""].filter(Boolean).map(esc).join(" · ")||"Details aanvullen"}</div></div></button>`:""}
-  <div class="tiles">
-   <div class="tile dark"><div class="k">${cap(MAANDL[now().getMonth()])} · gepland video</div><div class="v">${eur(maandV)}</div><div class="s">${B.filter(b=>(b.datum||"").startsWith(ym)&&b.status!=="Geannuleerd").length} opdrachten</div></div>
-   <div class="tile"><div class="k">Nog te ontvangen</div><div class="v">${eur(ontv)}</div><div class="s">uit bevestigde boekingen</div></div>
-   <div class="tile ${vervallen.length?"bad":""}"><div class="k">Open facturen</div><div class="v">${eur(openInv.reduce((a,i)=>a+invTotal(i),0))}</div><div class="s">${openInv.length} open${vervallen.length?` · ${vervallen.length} vervallen`:""}</div></div>
-   <div class="tile"><div class="k">Aanvragen in behandeling</div><div class="v">${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</div><div class="s"><a href="#aanvragen">bekijk pipeline</a></div></div>
-  </div>
+  <div class="vmini"><a href="#kpi"><span>Nog te ontvangen</span><b>${eur(ontv)}</b></a><a href="#aanvragen"><span>Aanvragen</span><b>${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</b></a><a href="#facturen"${vervallen.length?' class="bad"':""}><span>Open facturen</span><b>${openInv.length}</b></a></div>
   <div class="cols"><div>
-   <section class="block"><h2>Komende 3 weken <span class="meta">${komend.length} shoots · ${eur(komend.reduce((a,b)=>a+vid(b),0))}</span></h2>${komend.length?`<div class="list">${komend.map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Geen shoots in de komende 3 weken.</div>`}</section>
-   ${montage.length?`<section class="block"><h2>Nog te monteren <span class="meta">${montage.length}</span></h2><div class="list">${montage.map(b=>rowB(b,{noFlags:1})).join("")}</div></section>`:""}
-   <section class="block"><h2>Vraagt aandacht <span class="meta">${aandacht.length>8?`<a href="#boekingen" data-goaandacht>alle ${aandacht.length}</a>`:aandacht.length}</span></h2>${aandacht.length?`<div class="list">${[...aandacht.filter(b=>daysTo(b.datum)===null||daysTo(b.datum)>=-30),...aandacht.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)<-30)].slice(0,8).map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Alles is in orde.</div>`}</section>
+   ${(()=>{const wk=up.filter(b=>daysTo(b.datum)<=7&&b!==nx);const L=wk.length?wk:up.filter(b=>b!==nx).slice(0,3);return `<section class="block"><h2>${wk.length?"Deze week":"Daarna"} <span class="meta"><a href="#agenda">agenda</a></span></h2>${L.length?`<div class="list">${L.map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Niets gepland.</div>`}</section>`})()}
+   ${(()=>{const inn=sorted(B.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)<=0&&toReceive(b)>0));return inn.length?`<section class="block"><h2>Nog te innen <span class="meta">${eur(inn.reduce((a,b)=>a+toReceive(b),0))}</span></h2><div class="list">${inn.map(b=>rowQ(b,"pay")).join("")}</div></section>`:""})()}
+   ${montage.length?`<section class="block"><h2>Nog te monteren <span class="meta">${montage.length}</span></h2><div class="list">${montage.map(b=>rowQ(b,"lev")).join("")}</div></section>`:""}
+   ${aandacht.length?`<section class="block"><h2>Vraagt aandacht <span class="meta">${aandacht.length>8?`<a href="#boekingen" data-goaandacht>alle ${aandacht.length}</a>`:aandacht.length}</span></h2>${aandacht.length?`<div class="list">${[...aandacht.filter(b=>daysTo(b.datum)===null||daysTo(b.datum)>=-30),...aandacht.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)<-30)].slice(0,8).map(b=>rowB(b)).join("")}</div>`:""}</section>`:""}
   </div><div>
    <section class="block"><h2>Taken <span class="meta"><a href="#taken">alle ${S.tasks.filter(t=>!t.klaar).length}</a></span></h2>${taskList(S.tasks.filter(t=>!t.klaar).slice(0,7),true)}</section>
    ${vervallen.length?`<section class="block"><h2>Facturen vervallen <span class="meta">${vervallen.length}</span></h2><div class="list">${vervallen.map(rowInv).join("")}</div></section>`:""}
@@ -508,7 +526,7 @@ V.boekingen=()=>{
   L=sorted(L);if(f==="afgerond"&&!UI.bSearch)L.reverse();
   const groups=[];L.forEach(b=>{const k=b.datum?b.datum.slice(0,7):"zzz";let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(b)});
   const html=groups.map(g=>{const name=g.k==="zzz"?"Zonder datum":cap(MAANDL[+g.k.slice(5,7)-1])+" "+g.k.slice(0,4);
-    return `<section class="block"><h2>${name} <span class="meta">${g.items.filter(b=>b.status!=="Geannuleerd").length} · ${eur(g.items.reduce((a,b)=>a+vid(b),0))}</span></h2><div class="list">${g.items.map(b=>rowB(b)).join("")}</div></section>`}).join("");
+    return `<section class="block"><h2>${name} <span class="meta">${g.items.filter(b=>b.status!=="Geannuleerd").length} · ${eur(g.items.reduce((a,b)=>a+vid(b),0))}</span></h2><div class="list">${g.items.map(b=>f==="montage"?rowQ(b,"lev"):rowB(b)).join("")}</div></section>`}).join("");
   return `<div class="ph"><div><div class="eyebrow">Klantenbestand · ${S.bookings.length} boekingen</div><h1>Boekingen</h1></div><div class="acts"><button class="btn ghost" data-csv="bookings">Exporteer</button><button class="btn" data-newb="">+ Boeking</button></div></div>
   <input class="search" id="bsearch" type="search" placeholder="Zoek op naam, event, locatie of contact" value="${esc(UI.bSearch)}" aria-label="Zoek boekingen">
   ${UI.bSearch?"":`<div class="chips">${Object.entries(BF).map(([k,v])=>`<button class="chip" data-bf="${k}" aria-pressed="${f===k}">${v}</button>`).join("")}</div>`}
@@ -864,9 +882,11 @@ async function loadHistory(col,id,el){try{const {data,error}=await SB.from("docs
 /* ================= forms ================= */
 const STAT=["Gereserveerd","Bevestigd","On hold","Afgerond","Geannuleerd"];
 const FORMS={
- bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["status","Status","select",0,STAT],["start","Van","time"],["eind","Tot","time"],["categorie","Categorie","select",0,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","text"],["locatie","Locatie","text",1],
-  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["foto","Foto (€, telt niet mee)","number"],["fotoKost","Fotograaf krijgt (€)","number"],["betaling","Betaalstatus","select",0,["Open","Voorschot","Betaald","Te checken"]],["ontvangen","Al ontvangen (€)","number"],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
-  ["_","Contact & team","sec"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["levering","Levering","select",0,["Nog te filmen","In montage","Afgeleverd"]],["montageUren","Montage-uren (jouw tijd)","number"],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["notitie","Notities (alleen voor jou)","textarea",1]]},
+ bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["locatie","Locatie","text"],["start","Van","time"],["eind","Tot","time"],
+  ["status","Status","seg",1,STAT],["categorie","Categorie","seg",1,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","pak",1],
+  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["ontvangen","Al ontvangen (€)","number"],["betaling","Betaalstatus","seg",1,["Open","Voorschot","Betaald","Te checken"]],["foto","Foto (€, telt niet mee)","number"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
+  ["_","Team & levering","sec"],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["levering","Levering","seg",1,["Nog te filmen","In montage","Afgeleverd"]],["notitie","Notities (alleen voor jou)","textarea",1],
+  ["_","Meer details","more"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["fotoKost","Fotograaf krijgt (€)","number"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["montageUren","Montage-uren (jouw tijd)","number"]]},
  team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Helper","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
  leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via","Team"]],["event","Event","text"],["datum","Gevraagde datum","date"],["start","Van","time"],["eind","Tot","time"],["locatie","Locatie","text",1],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
  tasks:{t:"Taak",f:[["titel","Taak","text",1],["deadline","Tegen","date"],["klaar","Klaar","check"],["notitie","Notitie","textarea",1]]},
@@ -965,30 +985,97 @@ function openInvEditor(id,preset){
       if(!id&&preset&&preset._booking)o._booking=preset._booking;
       if(await save("invoices",id,o))close()}});
   upTot()}
-function openForm(col,id,preset){
+/* ================= boeking: overzicht ================= */
+function contactLinks(c){c=c||"";const out={};const ph=(c.match(/\+?\d[\d\s./-]{7,}\d/)||[])[0];
+  if(ph){let n=ph.replace(/[^\d+]/g,"");if(n.startsWith("00"))n="+"+n.slice(2);if(n.startsWith("0"))n="+32"+n.slice(1);if(!n.startsWith("+"))n="+"+n;out.tel="tel:"+n;out.wa="https://wa.me/"+n.slice(1)}
+  const ig=(c.match(/@([A-Za-z0-9._]{2,})/)||[])[1];if(ig&&!c.includes("@"+ig+"."))out.ig="https://instagram.com/"+ig;return out}
+const segRow=(k,opts,v)=>`<div class="chips qseg">${opts.map(o=>`<button type="button" class="chip" data-qs="${k}" data-v="${esc(o)}" aria-pressed="${o===v}">${esc(o)}</button>`).join("")}</div>`;
+function openBooking(id){const get=()=>S.bookings.find(x=>x.id===id);if(!get())return;
+  const html=()=>{const b=get();if(!b)return "";const d=pd(b.datum);const L=contactLinks(b.contact);const fl=flags(b);
+    const tot=vid(b),ont=+b.ontvangen||0,open=b.betaling==="Betaald"?0:Math.max(0,tot-ont);
+    const invs=S.invoices.filter(i=>i._booking===id);
+    const fact=(ic,t)=>t?`<div class="bo-f"><span>${ic}</span><div>${t}</div></div>`:"";
+    return `<div class="bo">
+     <div class="eyebrow">${esc([b.categorie,b.pakket].filter(Boolean).join(" · ")||"Boeking")}</div>
+     <h3 style="margin-bottom:4px">${esc(b.klant||"Zonder naam")}</h3>${b.event?`<p class="sub" style="margin:0 0 10px">${esc(b.event)}</p>`:""}
+     ${fl.length?`<div class="pills" style="margin-bottom:10px">${fl.map(f=>pill(f,"p-bad")).join("")}</div>`:""}
+     <div class="bo-qa">${L.tel?`<a class="btn ghost" href="${L.tel}">Bel</a>`:""}${L.wa?`<a class="btn ghost" href="${L.wa}" target="_blank" rel="noopener">WhatsApp</a>`:""}${L.ig?`<a class="btn ghost" href="${L.ig}" target="_blank" rel="noopener">Instagram</a>`:""}${b.locatie?`<a class="btn ghost" href="https://maps.google.com/?q=${encodeURIComponent(b.locatie)}" target="_blank" rel="noopener">Route</a>`:""}<button type="button" class="btn ghost" data-bedit>Bewerk</button></div>
+     <div class="bo-facts">
+      ${fact("📅",d?`<b>${cap(d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</b>${b.start?`<br>${esc(b.start)}${b.eind?"–"+esc(b.eind):""}`:""}`:"<b>Datum nog niet gekend</b>")}
+      ${fact("📍",esc(b.locatie||""))}
+      ${fact("👥",(teamChips(b)?`<span class="pills" style="display:inline-flex">${teamChips(b)}</span>`:"")+(b.fotograaf?` Fotograaf: ${esc(b.fotograaf)}`:""))}
+      ${fact("📞",esc(b.contact||""))}
+     </div>
+     <div class="bo-sec">Status</div>${segRow("status",STAT,b.status)}
+     <div class="bo-sec">Betaling</div>${segRow("betaling",["Open","Voorschot","Betaald"],b.betaling)}
+     <div class="bo-sec">Levering</div>${segRow("levering",["Nog te filmen","In montage","Afgeleverd"],b.levering)}
+     <div class="bo-money">${b.gratis?`<div><span>Prijs</span><b>Gratis</b></div>`:`<div><span>Prijs video</span><b>${tot?eur(tot):"–"}</b></div><div><span>Ontvangen</span><b>${eur(b.betaling==="Betaald"?tot:ont)}</b></div><div><span>Nog open</span><b${open?' style="color:var(--warn)"':""}>${eur(open)}</b></div>`}${b.foto?`<div><span>Foto (apart)</span><b>${eur(b.foto)}</b></div>`:""}</div>
+     <div class="bo-qa">${canWrite?`<button type="button" class="btn ghost" data-binv="v">Voorschotfactuur</button><button type="button" class="btn ghost" data-binv="e">Eindfactuur</button>`:""}</div>
+     ${invs.length?`<div class="list" style="margin-top:10px">${invs.map(rowInv).join("")}</div>`:""}
+     ${b.teamNotitie?`<div class="bo-sec">Voor het team</div><p class="bo-note">${esc(b.teamNotitie)}</p>`:""}
+     ${b.notitie?`<div class="bo-sec">Notities</div><p class="bo-note">${esc(b.notitie)}</p>`:""}
+     <details class="hist"><summary style="cursor:pointer;font-size:13px;color:var(--muted);margin-top:14px">Historiek</summary><div data-histbox>Laden…</div></details>
+     <div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button type="button" class="btn" data-bedit>Bewerk</button>`:""}</div></div></div>`};
+  const {sc,close}=openSheet(html());const sh=sc.querySelector(".sheet");
+  const wireHist=()=>{const hd=sh.querySelector("details.hist");if(hd)hd.addEventListener("toggle",()=>{if(hd.open&&!hd.dataset.l){hd.dataset.l=1;loadHistory("bookings",id,sh.querySelector("[data-histbox]"))}})};wireHist();
+  sh.addEventListener("click",async e=>{const t=e.target.closest("button,a");if(!t)return;
+    if(t.hasAttribute("data-bedit")){close();openForm("bookings",id,null,true);return}
+    if(t.dataset.binv){close();invFromBooking(get(),t.dataset.binv);return}
+    if(t.dataset.inv){close();openInvoice(t.dataset.inv);return}
+    if(t.dataset.qs&&canWrite){const k=t.dataset.qs,v=t.dataset.v,b=get();if(b[k]===v)return;const u={[k]:v};
+      if(k==="betaling"&&v==="Betaald")u.ontvangen=vid(b);
+      if(k==="levering"&&v!=="Nog te filmen"&&b.status==="Bevestigd"&&daysTo(b.datum)<=0)u.status="Afgerond";
+      sh.querySelectorAll(`[data-qs="${k}"]`).forEach(x=>x.setAttribute("aria-pressed",x===t));
+      await save("bookings",id,u);const y=sh.scrollTop;sh.innerHTML=html();sh.scrollTop=y;wireHist()}});
+}
+/* snelle acties vanuit lijsten */
+document.addEventListener("click",async e=>{const q=e.target.closest("[data-q]");if(!q)return;e.preventDefault();e.stopPropagation();
+  const [k,id]=q.dataset.q.split(":");const b=S.bookings.find(x=>x.id===id);if(!b)return;q.disabled=true;
+  if(k==="lev")await save("bookings",id,Object.assign({levering:"Afgeleverd"},b.status==="Bevestigd"?{status:"Afgerond"}:{}));
+  if(k==="pay")await save("bookings",id,{betaling:"Betaald",ontvangen:vid(b)})},true);
+function openForm(col,id,preset,direct){
   if(col==="invoices")return openInvEditor(id,preset);
+  if(col==="bookings"&&id&&!direct)return openBooking(id);
   const F=FORMS[col];const src=id?S[col].find(x=>x.id===id):null;if(id&&!src)return;
   const it=Object.assign({},src||preset||{});
   if(col==="invoices")it.regelsTxt=(it.regels||[]).map(r=>`${r.oms}${r.detail?" — "+r.detail:""} | ${r.bedrag}`).join("\n");
   const html=`<form><h3>${id?F.t+" bewerken":"Nieuwe "+F.t.toLowerCase()}</h3><div class="fgrid">${F.f.map(([k,l,t,full,opt])=>{
     if(t==="sec")return `<div class="fsec">${l}</div>`;
+    if(t==="more")return `</div><details class="fmore"><summary>${l}</summary><div class="fgrid">`;
     const v=it[k]??"";const fid=`f-${col}-${k}`;
+    if(t==="seg")return `<div class="f full"><label>${l}</label><div class="chips qseg">${opt.map(o=>`<button type="button" class="chip" data-segf="${k}" data-v="${esc(o)}" aria-pressed="${o===v}">${esc(o)}</button>`).join("")}</div><input type="hidden" name="${k}" value="${esc(v)}"></div>`;
+    if(t==="pak"){const P=PAK.filter(p=>p.k!=="fix"&&p.k!=="foto");const cur=P.find(p=>p.n===v);const u=+it.uren||null;
+      return `<div class="f full"><label>${l}</label><div class="chips qseg">${P.map(p=>`<button type="button" class="chip" data-pakf="${esc(p.n)}" aria-pressed="${p.n===v}">${esc(p.n)}</button>`).join("")}${v&&!cur?`<button type="button" class="chip" aria-pressed="true" data-pakf="${esc(v)}">${esc(v)}</button>`:""}</div>
+       <div class="pakrow"${cur&&cur.k!=="open"?"":" hidden"}><div class="step"><button type="button" data-pu="-1" aria-label="Minder uren">−</button><span data-pul>${u||(cur&&cur.u)||""} u</span><button type="button" data-pu="1" aria-label="Meer uren">+</button></div><span class="hint" data-pakhint></span></div>
+       <input type="hidden" name="pakket" value="${esc(v)}"><input type="hidden" name="uren" value="${u||""}"></div>`}
     if(t==="select")return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><select id="${fid}" name="${k}">${opt.map(o=>`<option value="${esc(o)}"${o===v?" selected":""}>${esc(o||"–")}</option>`).join("")}</select></div>`;
     if(t==="textarea")return `<div class="f full"><label for="${fid}">${l}</label><textarea id="${fid}" name="${k}">${esc(v)}</textarea></div>`;
     if(t==="team")return `<div class="f full"><label>${l}</label><div class="teamchecks">${S.team.filter(m=>m.actief!==false||(v||[]).includes(m.id)).map(m=>`<label><input type="checkbox" name="team" value="${esc(m.id)}" ${(v||[]).includes(m.id)?"checked":""}>${esc(m.code||m.naam)}${m.code&&m.naam&&m.naam!==m.code?` <span style="color:var(--muted)">${esc(m.naam)}</span>`:""}</label>`).join("")||`<span class="hint">Voeg eerst teamleden toe bij Team.</span>`}</div></div>`;
     if(t==="check")return `<div class="f check full"><input type="checkbox" id="${fid}" name="${k}" ${v?"checked":""}><label for="${fid}">${l}</label></div>`;
-    return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><input id="${fid}" name="${k}" type="${t}" value="${esc(v)}"${t==="number"?' inputmode="decimal" step="any"':""}></div>`}).join("")}</div>
+    return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><input id="${fid}" name="${k}" type="${t}" value="${esc(v)}"${t==="number"?' inputmode="decimal" step="any"':""}></div>`}).join("")}</div>${F.f.some(x=>x[2]==="more")?"</details>":""}
    ${id?`<details class="hist"><summary style="cursor:pointer;font-size:13px;color:var(--muted)">Historiek</summary><div data-histbox>Laden…</div></details>`:""}
-   <div class="actions"><div>${id&&canWrite?`<button type="button" class="btn danger" data-del>Verwijder</button>`:""}${col==="leads"&&id&&canWrite?`<button type="button" class="btn ghost" data-tobook>Maak boeking</button>`:""}${col==="bookings"&&id&&canWrite?`<button type="button" class="btn ghost" data-toinv="v">Voorschotfactuur</button><button type="button" class="btn ghost" data-toinv="e">Eindfactuur</button>`:""}</div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button class="btn">Bewaar</button>`:""}</div></div></form>`;
+   <div class="actions"><div>${id&&canWrite?`<button type="button" class="btn danger" data-del>Verwijder</button>`:""}${col==="leads"&&id&&canWrite?`<button type="button" class="btn ghost" data-tobook>Maak boeking</button>`:""}</div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button class="btn">Bewaar</button>`:""}</div></div></form>`;
   const {sc,close}=openSheet(html);const form=sc.querySelector("form");let armed=false;
   const hd=sc.querySelector("details.hist");if(hd)hd.addEventListener("toggle",()=>{if(hd.open&&!hd.dataset.l){hd.dataset.l=1;loadHistory(col,id,sc.querySelector("[data-histbox]"))}});
   if(col==="invoices"&&!id){const d=form.elements.datum,v=form.elements.vervaldatum;d.addEventListener("change",()=>{v.value=addDays(d.value,7)})}
+  const pakUpd=(setPrice)=>{const n=form.elements.pakket&&form.elements.pakket.value;const p=PAK.find(x=>x.n===n);const row=form.querySelector(".pakrow");if(!row)return;
+    if(!p||p.k==="open"){row.hidden=true;return}row.hidden=false;let u=+form.elements.uren.value||0;
+    if(!u){const st=form.elements.start&&form.elements.start.value,en=form.elements.eind&&form.elements.eind.value;if(st&&en){let h=(+en.slice(0,2)+ +en.slice(3)/60)-(+st.slice(0,2)+ +st.slice(3)/60);if(h<=0)h+=24;u=Math.round(h)}else u=p.u}
+    u=Math.max(p.min||1,Math.min(p.max||16,u));form.elements.uren.value=u;form.querySelector("[data-pul]").textContent=u+" u";const pr=pakPrice(p,u);
+    form.querySelector("[data-pakhint]").textContent="Tarief: "+eur(pr);if(setPrice&&form.elements.video){form.elements.video.value=pr;toast("Prijs ingevuld: "+eur(pr))}};
+  if(form.elements.pakket)pakUpd(false);
   sc.addEventListener("click",e=>{
+    const sg=e.target.closest("[data-segf]");if(sg){const k=sg.dataset.segf;form.querySelectorAll(`[data-segf="${k}"]`).forEach(x=>x.setAttribute("aria-pressed",x===sg));form.elements[k].value=sg.dataset.v;return}
+    const pk=e.target.closest("[data-pakf]");if(pk){form.querySelectorAll("[data-pakf]").forEach(x=>x.setAttribute("aria-pressed",x===pk));form.elements.pakket.value=pk.dataset.pakf;const p=PAK.find(x=>x.n===pk.dataset.pakf);
+      if(p&&p.k!=="open"&&!form.elements.categorie.value.includes(p.k==="biz"?"Business":"Love"))form.querySelectorAll('[data-segf="categorie"]').forEach(x=>{if(x.dataset.v===(p.k==="biz"?"Business":"Love Stories"))x.click()});
+      if(p&&p.k==="open")form.querySelectorAll('[data-segf="categorie"]').forEach(x=>{if(x.dataset.v==="Kleine Momenten")x.click()});
+      form.elements.uren.value="";pakUpd(true);return}
+    const pu=e.target.closest("[data-pu]");if(pu){form.elements.uren.value=(+form.elements.uren.value||0)+(+pu.dataset.pu);pakUpd(true);return}
     const del=e.target.closest("[data-del]");if(del){if(!armed){armed=true;del.textContent="Zeker? Tik opnieuw";return}remove(col,id).then(close)}
     if(e.target.closest("[data-tobook]")){close();openForm("bookings",null,{klant:it.naam,event:it.event,datum:it.datum,start:it.start,eind:it.eind,locatie:it.locatie,video:it.prijs,team:it.teamAanvraag&&it.bron?[it.bron]:[],fotograaf:it.teamAanvraag?tName(it.bron):"",status:"Gereserveerd",betaling:"Open",levering:"Nog te filmen",contact:it.contact,kanaal:it.kanaal,notitie:it.notitie,categorie:"Love Stories",_lead:id})}
     {const ti=e.target.closest("[data-toinv]");if(ti){close();invFromBooking(it,ti.dataset.toinv)}}});
-  form.addEventListener("submit",async e=>{e.preventDefault();const o={};F.f.forEach(([k,,t])=>{if(t==="sec")return;if(t==="team"){o[k]=[...form.querySelectorAll('input[name="team"]:checked')].map(x=>x.value);return}const el=form.elements[k];o[k]=t==="check"?el.checked:t==="number"?(el.value===""?null:+el.value):el.value.trim()});
-    const first=F.f.find(x=>x[2]!=="sec"&&x[2]!=="select")[0];if(!o[first]){form.elements[first].focus();toast("Vul eerst "+F.f.find(x=>x[0]===first)[1].toLowerCase()+" in");return}
+  form.addEventListener("submit",async e=>{e.preventDefault();const o={};F.f.forEach(([k,,t])=>{if(t==="sec"||t==="more")return;if(t==="pak"){o.pakket=form.elements.pakket.value;o.uren=form.elements.uren.value===""?null:+form.elements.uren.value;return}if(t==="team"){o[k]=[...form.querySelectorAll('input[name="team"]:checked')].map(x=>x.value);return}const el=form.elements[k];o[k]=t==="check"?el.checked:t==="number"?(el.value===""?null:+el.value):el.value.trim()});
+    const first=F.f.find(x=>!["sec","select","seg","pak","more"].includes(x[2]))[0];if(!o[first]){form.elements[first].focus();toast("Vul eerst "+F.f.find(x=>x[0]===first)[1].toLowerCase()+" in");return}
     if(col==="invoices"){o.regels=o.regelsTxt.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split("|");const amt=p.length>1?+(p.pop().replace(/[€\s]/g,"").replace(",",".")):0;const [oms,detail]=p.join("|").split(" — ");return{oms:oms.trim(),detail:(detail||"").trim(),bedrag:amt||0}});delete o.regelsTxt}
     if(col==="team"&&!id)o.sleutel=genKey();
     if(col==="invoices"&&!id&&preset&&preset._booking)o._booking=preset._booking;
