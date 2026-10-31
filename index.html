@@ -925,19 +925,22 @@ document.addEventListener("change",async e=>{const i=e.target.closest("[data-max
 /* ================= privé: loon + Prime Moments ================= */
 function monthCost(k){const y=+k.slice(0,4);return S.purchases.reduce((a,p)=>{const z=(p.zakelijk??100)/100;const amt=(+p.bedrag||0)*z;const d=p.datum||"";const y0=+d.slice(0,4);if(!y0)return a;
   if(p.soort==="Investering"){const n=+p.jaren||3;return a+(y>=y0&&y<y0+n?amt/n/12:0)}return a+(d.slice(0,7)===k?amt:0)},0)}
-function spaarBlock(estCost){const st=S.settings;const sm=+st.spaarMaand||0,s0=+st.spaarStart||0,tx=st.taxPct==null?30:+st.taxPct;const loon=+st.loon||0;
+function spaarBlock(estCost,yr){const st=S.settings;const sm=+st.spaarMaand||0,s0=+st.spaarStart||0,tx=st.taxPct==null?30:+st.taxPct;const loon=+st.loon||0;
   const n0=now();const yNow=n0.getFullYear();const ymNow=iso(n0).slice(0,7);
-  const calc=(sk,Y)=>{const F=expertForecast(sk);let months=0,pm=0;F.months.forEach(x=>{if(x.k<=ymNow&&n0.getDate()>=25)return;if(x.y>Y)return;months++;pm+=x.booked+x.extra+x.rec-Math.round(estCost)});
+  const calc=(sk,Y,from)=>{const F=expertForecast(sk);let months=0,pm=0;F.months.forEach(x=>{if(x.k<=ymNow&&n0.getDate()>=25)return;if(x.y>Y||(from&&x.y<from))return;months++;pm+=x.booked+x.extra+x.rec-Math.round(estCost)});
     const net=Math.max(0,pm)*(1-tx/100);return{months,pm,net,loonSp:sm*months,end:s0+sm*months+net,inc:loon*months+pm}};
   const ys=[yNow,yNow+1];
-  return `<section class="block spaar"><h2>Wat heb ik op het einde van het jaar? <span class="meta">spaarcalculator</span></h2>
+  return `<section class="block spaar"><h2>Wat heb ik op het einde van ${yr}? <span class="meta">spaarcalculator</span></h2>
    <div class="fgrid sp-in">
     <div class="f"><label for="sp-m">Ik spaar per maand van mijn loon (€)</label><input id="sp-m" type="number" inputmode="decimal" value="${sm||""}" placeholder="bv. 500" data-sp="spaarMaand"></div>
     <div class="f"><label for="sp-s">Wat ik nu al gespaard heb (€, mag leeg)</label><input id="sp-s" type="number" inputmode="decimal" value="${s0||""}" placeholder="0" data-sp="spaarStart"></div>
     <div class="f"><label for="sp-t">Van Prime Moments zet ik opzij voor belastingen (%)</label><input id="sp-t" type="number" inputmode="decimal" value="${tx}" data-sp="taxPct"></div>
    </div>
-   <div class="sp-cards">${Object.entries(SCEN).map(([k,v])=>`<div class="sp-card${k===(UI.pScen||"realistisch")?" hi":""}"><div class="sp-lab">${v.lab}</div>${ys.map(y=>{const c=calc(k,y);return `<div class="sp-row"><span>Eind ${y}</span><b class="sp-end">${eur(c.end)}</b><small>${s0?eur(s0)+" al gespaard + ":""}${c.months} maanden × ${eur(sm)} = ${eur(c.loonSp)} van je loon<br>+ ${eur(c.net)} uit Prime Moments${tx?` (na ${tx}% belastingen)`:""}</small></div>`}).join("")}</div>`).join("")}</div>
-   <p class="note">Telt vanaf ${n0.getDate()>=25?"volgende maand":"deze maand"}; "eind ${yNow+1}" loopt dus door vanaf nu (inclusief de rest van ${yNow}). Prime Moments = verwachte video-omzet min geschatte kosten (±${eur(estCost)}/maand), daarna gaat er ${tx}% af voor belastingen en sociale bijdragen. Dat percentage is een inschatting: vraag je boekhouder wat voor jou klopt.</p>
+   <div class="sp-cards">${Object.entries(SCEN).map(([k,v])=>{const inY=calc(k,yr,yr);const cum=calc(k,yr);const only=yr===yNow;
+     return `<div class="sp-card${k===(UI.pScen||"realistisch")?" hi":""}"><div class="sp-lab">${v.lab}</div>
+      <div class="sp-row"><span>${only?"Rest van "+yr:"In "+yr+" (jan–dec)"}</span><b class="sp-end">${eur(inY.loonSp+inY.net)}</b><small>${inY.months} maanden × ${eur(sm)} = ${eur(inY.loonSp)} van je loon<br>+ ${eur(inY.net)} uit Prime Moments${tx?` (na ${tx}% belastingen)`:""}</small></div>
+      ${only&&!s0?"":`<div class="sp-row"><span>Op je rekening eind ${yr}</span><b class="sp-end">${eur(cum.end)}</b><small>${s0?eur(s0)+" al gespaard + ":""}${only?"":"inclusief de rest van "+yNow}</small></div>`}</div>`}).join("")}</div>
+   <p class="note">Kies bovenaan het jaar. "Op je rekening" telt alles samen vanaf nu. Prime Moments = verwachte video-omzet min geschatte kosten (±${eur(estCost)}/maand), daarna gaat er ${tx}% af voor belastingen en sociale bijdragen. Dat percentage is een inschatting: vraag je boekhouder wat voor jou klopt.</p>
   </section>`}
 document.addEventListener("change",async e=>{const i=e.target.closest("[data-sp]");if(!i)return;const k=i.dataset.sp;const v=i.value===""?null:+i.value;S.settings[k]=v;try{await db.doc("settings/finance").update({[k]:v})}catch(err){}render()});
 document.addEventListener("click",e=>{const s=e.target.closest("[data-pscen]");if(s){UI.pScen=s.dataset.pscen;render()}});
@@ -953,7 +956,7 @@ V.prive=()=>{const loon=+S.settings.loon||0;const yNow=now().getFullYear();const
   const years=[yNow,yNow+1];
   return `<div class="ph"><div><div class="eyebrow">Alleen voor jou</div><h1>Privé</h1></div><div class="acts"><button class="btn ghost" data-loon>Loon: ${loon?eur(loon)+"/maand":"instellen"}</button></div></div>
   <div class="chips" style="margin-bottom:16px">${years.map(y=>`<button class="chip" data-pyear="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}<span style="width:12px"></span>${Object.entries(SCEN).map(([k,v])=>`<button class="chip" data-pscen="${k}" aria-pressed="${k===psk}">${v.lab}</button>`).join("")}</div>
-  ${spaarBlock(estCost)}
+  ${spaarBlock(estCost,yr)}
   ${loon?"":`<div class="banner">Vul eerst je maandloon in via de knop rechtsboven.</div>`}
   <div class="kgrid">
    <div class="tile dark"><div class="k">Totaal inkomen ${yr}</div><div class="v">${eur(tot)}</div><div class="s">loon + Prime Moments${yr>=yNow?" (incl. verwachting)":""}</div></div>
