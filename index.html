@@ -163,7 +163,7 @@ section.block>h2 .meta{font-family:var(--body);font-size:13px;font-weight:500;co
 .day[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--accent)}
 .day .ev{font-size:11px;line-height:1.25;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none}
 .dots{display:flex;gap:3px;flex-wrap:wrap}
-.dot{width:7px;height:7px;border-radius:50%}
+.dot{width:8px;height:8px;border-radius:50%}
 .e-Bevestigd{background:var(--ok-bg);color:var(--ok)} .d-Bevestigd{background:var(--ok)}
 .e-Gereserveerd{background:var(--warn-bg);color:var(--warn)} .d-Gereserveerd{background:var(--warn)}
 .e-Afgerond{background:var(--done-bg);color:var(--done)} .d-Afgerond{background:var(--done)}
@@ -312,6 +312,39 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .bo-note{white-space:pre-wrap;font-size:14px;background:var(--bg);border-radius:12px;padding:10px 12px;margin:0}
 .pakrow{display:flex;align-items:center;gap:10px;margin-top:8px}.pakrow[hidden]{display:none}
 .fmore{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.fmore summary{cursor:pointer;font-size:13px;color:var(--muted);margin-bottom:12px}
+/* eventkleuren */
+:root{--k-kina:#B4472F;--k-soz:#B0567A;--k-nikah:#3D6C8C;--k-dugun:#93701F;--k-biz:#3A3A3A;--k-ov:#6E5A92}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--k-kina:#EE967F;--k-soz:#E79CBB;--k-nikah:#8DBBDB;--k-dugun:#E2C57A;--k-biz:#CFCAC4;--k-ov:#B9A6DD}}
+:root[data-theme="dark"]{--k-kina:#EE967F;--k-soz:#E79CBB;--k-nikah:#8DBBDB;--k-dugun:#E2C57A;--k-biz:#CFCAC4;--k-ov:#B9A6DD}
+.ek-kina{--k:var(--k-kina)}.ek-soz{--k:var(--k-soz)}.ek-nikah{--k:var(--k-nikah)}.ek-dugun{--k:var(--k-dugun)}.ek-biz{--k:var(--k-biz)}.ek-ov{--k:var(--k-ov)}
+.day .ev.ek{background:color-mix(in srgb,var(--k) 16%,var(--surface));color:var(--k);border-left:3px solid var(--k);font-weight:500}
+.day .ev.ek.st-Gereserveerd{background:none;border:1.5px dashed var(--k);border-left-width:3px}
+.day .ev.ek.st-Afgerond,.day .ev.ek.st-On-hold{opacity:.5}
+.day .ev.ek.st-Geannuleerd{opacity:.45;text-decoration:line-through}
+.dot.dk{background:var(--k)}.dot.dk.st-Gereserveerd{background:none;box-shadow:inset 0 0 0 1.5px var(--k)}.dot.dk.st-Afgerond{opacity:.45}.dot.dk.st-Geannuleerd{opacity:.3}
+.legend i.lk{background:var(--k)}
+/* shootdag */
+.sday{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--k);border-radius:20px;padding:18px;margin-bottom:22px;box-shadow:var(--shadow)}
+.sd-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sd-badge{background:var(--k);color:#fff;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:999px;font-weight:600}
+.sd-type{font-size:12px;color:var(--k);font-weight:500}
+.sd-time{font-family:var(--display);font-size:44px;font-weight:600;line-height:1.05;margin-top:12px}.sd-time small{font-size:18px;color:var(--muted);font-weight:400}
+.sd-name{font-size:24px;margin:4px 0 14px;display:flex;flex-direction:column}.sd-name small{font-family:var(--body);font-size:14px;color:var(--muted);font-weight:400}
+.sd-big{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sd-big a,.sd-big .sd-mute{display:flex;flex-direction:column;gap:3px;background:var(--fg);color:var(--bg);border-radius:16px;padding:14px;text-decoration:none;min-height:84px}
+.sd-big .sd-mute{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.sd-big b{font-size:17px;font-weight:600}.sd-big span{font-size:12.5px;opacity:.8;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sd-team{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sd-mem{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;padding:8px 12px;text-decoration:none;color:var(--fg);background:var(--bg);min-width:72px}
+.sd-mem b{font-size:15px}.sd-mem span{font-size:12px;color:var(--muted)}
+.sd-note{margin-top:12px;background:var(--bg);border-radius:14px;padding:12px 14px;font-size:14.5px;white-space:pre-wrap}.sd-note p{margin:0}.sd-note p+p{margin-top:8px}.sd-note .mine{color:var(--muted);font-size:13.5px}
+.sd-shots{margin-top:14px}.sd-shots summary{cursor:pointer;font-family:var(--display);font-size:19px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px}.sd-shots summary span{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400}
+.sd-list{display:grid;gap:2px}
+.sd-it{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
+.sd-it input{width:24px;height:24px;flex:none;accent-color:var(--k)}
+.sd-it input:checked+span{text-decoration:line-through;color:var(--muted)}
+.sd-add{display:flex;gap:8px;margin-top:10px}.sd-add input{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);font:inherit;font-size:16px;min-width:0}
+.sd-open{margin-top:14px;width:100%}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -470,8 +503,9 @@ V.vandaag=()=>{
   const vervallen=S.invoices.filter(i=>invStatus(i)==="Vervallen");
   const nxDays=nx?daysTo(nx.datum):null;
   const imp=!S.bookings.length&&!S.invoices.length?`<div class="entry" style="margin-bottom:22px"><h2 style="font-size:20px">Je gegevens importeren</h2><p class="note">Je HQ is nog leeg. Kies het bestand <b>PrimeMoments_HQ_gegevens.json</b> dat je van Claude kreeg. Dat moet maar één keer.</p><input type="file" id="importfile" accept=".json,application/json" style="font-family:var(--body);font-size:14px;text-transform:none;letter-spacing:0"></div>`:"";
-  return imp+teamNews()+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
-  ${nx?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
+  const todayB=sorted(B.filter(b=>daysTo(b.datum)===0&&b.status!=="Geannuleerd"),"start");
+  return imp+teamNews()+todayB.map(shootDay).join("")+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
+  ${nx&&!todayB.includes(nx)?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
    <div><div class="lbl">Volgende shoot · ${new Date(pd(nx.datum)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?(nx.eind?nx.start+"–"+nx.eind:nx.start):"",nx.locatie||"",nx.fotograaf?"Fotograaf: "+nx.fotograaf:""].filter(Boolean).map(esc).join(" · ")||"Details aanvullen"}</div></div></button>`:""}
   <div class="vmini"><a href="#kpi"><span>Nog te ontvangen</span><b>${eur(ontv)}</b></a><a href="#aanvragen"><span>Aanvragen</span><b>${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</b></a><a href="#facturen"${vervallen.length?' class="bad"':""}><span>Open facturen</span><b>${openInv.length}</b></a></div>
   <div class="cols"><div>
@@ -495,8 +529,8 @@ V.agenda=()=>{
      <span class="n">${d.getDate()}</span>
      ${bk?`<span class="ev e-blk">${esc(bk.titel)}</span><span class="blkbar"></span>`:""}
      ${openLeads().filter(l=>l.datum===ds).map(l=>`<span class="ev e-req">Aanvraag: ${esc(l.naam)}</span>`).join("")}
-     ${evs.slice(0,3).map(b=>`<span class="ev e-${esc(b.status)}">${b.start?esc(b.start)+" ":""}${esc(b.klant)}</span>`).join("")}${evs.length>3?`<span class="ev" style="color:var(--muted)">+${evs.length-3} meer</span>`:""}
-     <span class="dots">${evs.map(b=>`<i class="dot d-${esc(b.status)}"></i>`).join("")}${openLeads().filter(l=>l.datum===ds).map(()=>`<i class="dot d-req"></i>`).join("")}</span></button>`}
+     ${evs.slice(0,3).map(b=>`<span class="ev ek ${ek(b)} st-${esc(String(b.status||"").replace(/\s+/g,"-"))}">${b.start?esc(b.start)+" ":""}${esc(b.klant)}</span>`).join("")}${evs.length>3?`<span class="ev" style="color:var(--muted)">+${evs.length-3} meer</span>`:""}
+     <span class="dots">${evs.map(b=>`<i class="dot dk ${ek(b)} st-${esc(String(b.status||"").replace(/\s+/g,"-"))}"></i>`).join("")}${openLeads().filter(l=>l.datum===ds).map(()=>`<i class="dot d-req"></i>`).join("")}</span></button>`}
   const ym=`${y}-${String(m+1).padStart(2,"0")}`;
   const sel=UI.calSel;
   const list=sel?sorted(S.bookings.filter(b=>b.datum===sel),"start"):sorted(S.bookings.filter(b=>(b.datum||"").startsWith(ym)));
@@ -506,7 +540,7 @@ V.agenda=()=>{
   return `<div class="ph"><div><div class="eyebrow">Planning</div><h1>${cap(MAANDL[m])} ${y}</h1></div>
    <div class="acts cal-nav"><button class="btn ghost" data-cal="-1" aria-label="Vorige maand">‹</button><button class="btn ghost" data-cal="0">Vandaag</button><button class="btn ghost" data-cal="1" aria-label="Volgende maand">›</button><button class="btn ghost" data-gcal>Google Agenda</button><button class="btn" data-newb="${sel||""}">+ Boeking</button></div></div>
   <div class="cal"><div class="cal-head">${DAG.map(d=>`<span>${d}</span>`).join("")}</div><div class="cal-grid">${cells}</div></div>
-  <div class="legend"><span><i style="background:var(--ok)"></i>Bevestigd</span><span><i style="background:var(--warn)"></i>Gereserveerd</span><span><i style="background:var(--done)"></i>Afgerond</span><span><i style="background:var(--bad)"></i>Geannuleerd</span><span><i style="background:var(--sand);border:1px solid var(--line)"></i>Niet beschikbaar</span><span><i style="background:var(--info)"></i>Aanvraag</span></div>
+  <div class="legend">${ETLAB.map(([k,l])=>`<span><i class="lk ek-${k}"></i>${l}</span>`).join("")}<span><i style="border:1.5px dashed var(--muted);background:none"></i>Gereserveerd</span><span><i style="background:var(--muted);opacity:.4"></i>Afgerond</span><span><i style="background:var(--sand);border:1px solid var(--line)"></i>Niet beschikbaar</span><span><i style="background:var(--info)"></i>Aanvraag</span></div>
   <section class="block" style="margin-top:22px"><h2>${sel?cap(new Date(pd(sel)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})):"Deze maand"} <span class="meta">${sel?`<a href="#agenda" data-clearsel>toon hele maand</a>`:`${list.filter(b=>b.status!=="Geannuleerd").length} boekingen · ${eur(total)}`}</span></h2>
    ${bks.map(k=>`<div class="list" style="margin-bottom:10px"><button class="row two" data-edit="blocks:${k.id}"><div class="main-t"><div class="t">${esc(k.titel)}</div><div class="d">${dl_(k.van)} – ${dl_(k.tot||k.van)}${k.notitie?" · "+esc(k.notitie):""}</div></div><div class="amt">${pill("Niet beschikbaar","p-neutral")}</div></button></div>`).join("")}
    ${reqList.length?`<div class="list" style="margin-bottom:10px">${reqList.map(l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">Aanvraag: ${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[dl_(l.datum),l.start?l.start+(l.eind?"–"+l.eind:""):"",l.teamAanvraag?"van "+tName(l.bron):l.kanaal].filter(Boolean).map(esc).join(" · ")}</div></div><div class="amt">${pill(l.status||"Nieuw")}</div></button>`).join("")}</div>`:""}
@@ -680,6 +714,41 @@ function etype(b){const t=((b.event||"")+" "+(b.pakket||"")).toLowerCase();
   if(/söz|soz|nişan|nisan|verloving|isteme|handvra|aanzoek/.test(t))return "Söz / nişan / isteme";
   if(b.categorie==="Business"||/business|bedrijf|conferentie|prime social|content|shoot met|extensions/.test(t))return "Business";
   return "Overig"}
+/* ================= eventkleuren + shootdag ================= */
+const ETSLUG={"Düğün / trouw":"dugun","Nikah":"nikah","Kına / henna":"kina","Söz / nişan / isteme":"soz","Business":"biz","Overig":"ov"};
+const ETLAB=[["kina","Kına"],["soz","Söz / nişan"],["nikah","Nikah"],["dugun","Düğün"],["biz","Business"],["ov","Overig"]];
+const ek=b=>"ek-"+(ETSLUG[etype(b)]||"ov");
+const SHOT={
+ kina:["Decor en tafel in detail","Aankomst bruid in bindallı","Familie die binnenkomt","Kaarsen en dienblad met henna","Kına türküsü – emoties close-up","Henna aanbrengen op de hand","Gouden munt in de hand","Dans met familie en vriendinnen","Koppelshots","Interviews familie / vriendinnen","Drone buiten (als het weer het toelaat)"],
+ soz:["Decor, bloemen en chocolade","Aankomst families","Toespraak / vraag om de hand","Ringen omdoen","Lint knippen","Reactie ouders close-up","Koppelshots","Familiefoto-momenten","Interviews familie / vrienden","Details: ringen, handen, outfit"],
+ nikah:["Aankomst bruid en bruidegom","Getuigen en familie","Ceremonie","Handtekeningen","Ringen","Felicitaties","Koppelshots","Interviews familie / vrienden","Details: boek, ringen, bloemen"],
+ dugun:["Voorbereiding bruid (jurk, make-up, details)","Voorbereiding bruidegom","Gelin çıkarma – rode lint (kuşak)","Afscheid bij het huis","Konvooi / auto's","Aankomst zaal","Eerste dans","Takı merasimi (goud)","Taart","Halay en dansvloer","Koppelshots","Drone (als het weer het toelaat)","Interviews familie / vrienden"],
+ biz:["Establishing shot van de zaak","Logo en branding","Product- en detailshots","Team aan het werk","Klanten / sfeer","Talking head of interview","B-roll voor social (verticaal)"],
+ ov:["Aankomst en sfeer","Decor en details","Hoofdmomenten","Koppel / hoofdpersonen","Familie en vrienden","Drone (als het weer het toelaat)"]};
+const shotsFor=b=>(SHOT[ETSLUG[etype(b)]]||SHOT.ov).concat(b.shotExtra||[]);
+function telLink(c){return contactLinks(c)}
+function shootDay(b){const L=contactLinks(b.contact);const done=b.shotDone||[];const sh=shotsFor(b);const n=sh.filter(x=>done.includes(x)).length;
+  const team=(b.team||[]).map(id=>S.team.find(m=>m.id===id)).filter(Boolean);
+  return `<section class="sday ${ek(b)}">
+   <div class="sd-top"><span class="sd-badge">Shootdag</span><span class="sd-type">${esc(etype(b))}</span></div>
+   <div class="sd-time">${esc(b.start||"–")}${b.eind?`<small> tot ${esc(b.eind)}</small>`:""}</div>
+   <h2 class="sd-name">${esc(b.klant)}${b.event?`<small>${esc(b.event)}</small>`:""}</h2>
+   <div class="sd-big">
+    ${b.locatie?`<a href="https://maps.google.com/?q=${encodeURIComponent(b.locatie)}" target="_blank" rel="noopener"><b>Route</b><span>${esc(b.locatie)}</span></a>`:`<div class="sd-mute"><b>Route</b><span>Geen adres</span></div>`}
+    ${L.tel?`<a href="${L.tel}"><b>Bel klant</b><span>${esc(b.contact)}</span></a>`:L.wa||L.ig?`<a href="${L.wa||L.ig}" target="_blank" rel="noopener"><b>Klant</b><span>${esc(b.contact)}</span></a>`:`<div class="sd-mute"><b>Klant</b><span>Geen nummer</span></div>`}
+   </div>
+   ${team.length||b.fotograaf?`<div class="sd-team">${team.map(m=>{const T=contactLinks(m.contact);return `<a ${T.tel?`href="${T.tel}"`:""} class="sd-mem"><b>${esc(m.code||m.naam)}</b><span>${esc((m.naam||"").split(" ")[0])}${T.tel?" · bel":""}</span></a>`}).join("")}${b.fotograaf?`<div class="sd-mem"><b>Foto</b><span>${esc(b.fotograaf)}</span></div>`:""}</div>`:""}
+   ${b.teamNotitie||b.notitie?`<div class="sd-note">${b.teamNotitie?`<p>${esc(b.teamNotitie)}</p>`:""}${b.notitie?`<p class="mine">${esc(b.notitie)}</p>`:""}</div>`:""}
+   <details class="sd-shots" open><summary>Shotlist <span>${n}/${sh.length}</span></summary>
+    <div class="sd-list">${sh.map(x=>`<label class="sd-it"><input type="checkbox" data-shot="${b.id}" value="${esc(x)}" ${done.includes(x)?"checked":""}><span>${esc(x)}</span></label>`).join("")}</div>
+    ${canWrite?`<form class="sd-add" data-shotadd="${b.id}"><input placeholder="Eigen shot toevoegen…" aria-label="Eigen shot toevoegen"><button class="btn sm">+</button></form>`:""}
+   </details>
+   <button type="button" class="btn ghost sd-open" data-edit="bookings:${b.id}">Alle details</button>
+  </section>`}
+document.addEventListener("change",async e=>{const c=e.target.closest("[data-shot]");if(!c||!canWrite)return;const b=S.bookings.find(x=>x.id===c.dataset.shot);if(!b)return;
+  const set=new Set(b.shotDone||[]);c.checked?set.add(c.value):set.delete(c.value);try{await db.doc("bookings/"+b.id).update({shotDone:[...set]})}catch(err){toast("Bewaren mislukt")}});
+document.addEventListener("submit",async e=>{const f=e.target.closest("[data-shotadd]");if(!f)return;e.preventDefault();const v=f.querySelector("input").value.trim();if(!v)return;
+  const b=S.bookings.find(x=>x.id===f.dataset.shotadd);if(!b)return;await db.doc("bookings/"+b.id).update({shotExtra:[...(b.shotExtra||[]),v]}).catch(()=>toast("Bewaren mislukt"))});
 function teamAnalysis(){const yr=UI.taYear||String(now().getFullYear());const T=S.team;
   const years=[...new Set(S.bookings.filter(b=>(b.team||[]).length).map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
   const B=S.bookings.filter(b=>b.status!=="Geannuleerd"&&(b.datum||"").startsWith(yr)&&(b.team||[]).length);
