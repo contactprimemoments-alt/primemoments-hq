@@ -114,7 +114,7 @@ section.block>h2 .meta{font-family:var(--body);font-size:13px;font-weight:500;co
 .pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .pill{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .p-ok,.p-Bevestigd,.p-Betaald,.p-Geboekt,.p-Actief,.p-Loopt,.p-Afgeleverd{background:var(--ok-bg);color:var(--ok)}
-.p-warn,.p-Gereserveerd,.p-Voorschot,.p-Open,.p-In-afwachting,.p-Bijna-verlopen,.p-In-montage{background:var(--warn-bg);color:var(--warn)}
+.p-warn,.p-Gereserveerd,.p-On-hold,.p-Voorschot,.p-Open,.p-In-afwachting,.p-Bijna-verlopen,.p-In-montage{background:var(--warn-bg);color:var(--warn)}
 .p-done,.p-Afgerond,.p-Verlopen,.p-Gestopt{background:var(--done-bg);color:var(--done)}
 .p-bad,.p-Geannuleerd,.p-Vervallen,.p-Verloren{background:var(--bad-bg);color:var(--bad)}
 .p-info,.p-Nieuw,.p-Offerte-gestuurd,.p-Wacht-op-antwoord,.p-Te-checken{background:var(--info-bg);color:var(--info)}
@@ -356,9 +356,9 @@ const sorted=(L,k="datum")=>[...L].sort((a,b)=>(a[k]||"9999").localeCompare(b[k]
 function toast(t){document.querySelectorAll(".toast").forEach(e=>e.remove());const e=document.createElement("div");e.className="toast";e.setAttribute("role","status");e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2400)}
 
 /* ================= business logic ================= */
-const toReceive=b=>{if(b.status==="Geannuleerd"||b.status==="Gereserveerd"||b.betaling==="Betaald"||b.betaling==="Te checken")return 0;return Math.max(0,vid(b)-(+b.ontvangen||0))};
+const toReceive=b=>{if(b.status==="Geannuleerd"||b.status==="On hold"||b.status==="Gereserveerd"||b.betaling==="Betaald"||b.betaling==="Te checken")return 0;return Math.max(0,vid(b)-(+b.ontvangen||0))};
 function sameDay(b){if(!b.datum||b.status==="Geannuleerd")return [];return S.bookings.filter(o=>o.id!==b.id&&o.datum===b.datum&&o.status!=="Geannuleerd")}
-function flags(b){const f=[];if(b.status==="Geannuleerd")return f;const dt=daysTo(b.datum);
+function flags(b){const f=[];if(b.status==="Geannuleerd"||b.status==="On hold")return f;const dt=daysTo(b.datum);
   if(!b.datum)f.push("Datum ontbreekt");
   if(dt!==null&&dt<0&&b.status==="Gereserveerd")f.push("Doorgegaan?");
   if(!b.video&&!b.gratis&&b.status!=="Geannuleerd")f.push("Prijs ontbreekt");
@@ -843,7 +843,7 @@ async function loadHistory(col,id,el){try{const {data,error}=await SB.from("docs
     return `<li><b>${t}</b>${who} · ${Object.entries(h.changes||{}).map(([k,v])=>`${esc(FLABEL[k]||k)}: ${esc(histVal(k,v.van))} → ${esc(histVal(k,v.naar))}`).join(" · ")}</li>`}).join("")}</ul>`}catch(_){el.innerHTML=`<p class="note">Historiek kon niet geladen worden.</p>`}}
 
 /* ================= forms ================= */
-const STAT=["Gereserveerd","Bevestigd","Afgerond","Geannuleerd"];
+const STAT=["Gereserveerd","Bevestigd","On hold","Afgerond","Geannuleerd"];
 const FORMS={
  bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["status","Status","select",0,STAT],["start","Van","time"],["eind","Tot","time"],["categorie","Categorie","select",0,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","text"],["locatie","Locatie","text",1],
   ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["foto","Foto (€, telt niet mee)","number"],["fotoKost","Fotograaf krijgt (€)","number"],["betaling","Betaalstatus","select",0,["Open","Voorschot","Betaald","Te checken"]],["ontvangen","Al ontvangen (€)","number"],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
