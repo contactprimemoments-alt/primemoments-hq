@@ -404,7 +404,8 @@ function renderNav(){
   let h=`<div class="brand"><span class="logo">PRIMEMOMENTS<i></i></span><small>Headquarter</small></div>
   <button class="btn newbtn" data-act="new">+ Nieuw</button><button class="nav-a d-only" data-search style="background:var(--sand2);border:1px solid var(--line);cursor:pointer;font:inherit;margin:0 4px 6px">${ico("zoek")}<span>Zoeken</span><span style="margin-left:auto;font-size:11px;color:var(--muted)">⌘K</span></button>`;
   NAV.forEach(([g,items])=>{h+=`<div class="grp">${g}</div>`;items.forEach(([k,l])=>{const mob=MOBILE.includes(k);h+=`<a class="nav-a${mob?"":" d-only"}" href="#${k}" ${cur===k?'aria-current="page"':""}>${ico(k)}<span>${k==="geld"?"<span class='m'>Geld</span>":l}</span><span class="cnt">${badge(k)}</span></a>`})});
-  h+=`<button class="nav-a d-only" data-logout style="background:none;border:0;cursor:pointer;margin-top:auto;font:inherit">${ico("meer")}<span>Afmelden</span></button>`;
+  h+=`<button class="nav-a d-only" data-backups style="background:none;border:0;cursor:pointer;margin-top:auto;font:inherit">${ico("taken")}<span>Back-ups</span></button>`;
+  h+=`<button class="nav-a d-only" data-logout style="background:none;border:0;cursor:pointer;font:inherit">${ico("meer")}<span>Afmelden</span></button>`;
   h+=`<a class="nav-a m-only" href="#meer" ${inMeer?'aria-current="page"':""}>${ico("meer")}<span>Meer</span></a>`;
   $("#nav").innerHTML=h;
   // On desktop show "Rapporten" text; on phone "Geld"
@@ -625,7 +626,7 @@ V.partners=()=>{const R=[...new Set(S.partners.map(p=>p.rol||"Partner"))];
   ${R.map(r=>`<section class="block"><h2>${esc(r)} <span class="meta">${S.partners.filter(p=>(p.rol||"Partner")===r).length}</span></h2><div class="list">${S.partners.filter(p=>(p.rol||"Partner")===r).map(p=>{const n=S.bookings.filter(b=>(b.fotograaf||"").toLowerCase().includes((p.naam||"").toLowerCase().split(" ")[0])).length;return `<button class="row two" data-edit="partners:${p.id}"><div class="main-t"><div class="t">${esc(p.naam)}</div><div class="d">${[p.contact,p.notitie].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${pill(p.type,"p-neutral")}</div></div><div class="amt">${n?`${n}<small>boekingen</small>`:""}</div></button>`}).join("")}</div></section>`).join("")||`<div class="empty">Nog geen partners.</div>`}`};
 
 V.meer=()=>`<div class="ph"><div><div class="eyebrow">Prime Moments HQ</div><h1>Meer</h1></div><div class="acts"><button class="btn ghost" data-logout>Afmelden</button></div></div>
- <div class="menu"><button data-search>${ico("zoek")}<b>Zoeken</b><span>Klanten, boekingen, facturen</span></button>${[["kpi","Cockpit","KPI's, prognose, herkomst"],["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
+ <div class="menu"><button data-search>${ico("zoek")}<b>Zoeken</b><span>Klanten, boekingen, facturen</span></button><button data-backups>${ico("taken")}<b>Back-ups</b><span>Elke nacht automatisch</span></button>${[["kpi","Cockpit","KPI's, prognose, herkomst"],["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
 
 V.kennisbank=()=>`<div class="ph"><div><div class="eyebrow">Alles op één plek</div><h1>Kennisbank</h1></div></div>
 <div class="kb">
@@ -1173,6 +1174,28 @@ async function importFile(file){try{const j=JSON.parse(await file.text());const 
   for(let k=0;k<rows.length;k+=100){const {error}=await SB.from("docs").upsert(rows.slice(k,k+100));if(error)throw error}
   toast("Klaar: "+rows.length+" items geïmporteerd");COLS.forEach(c=>db.collection(c).get().catch(()=>{}))}catch(err){toast("Importeren mislukt: "+(err.message||err))}}
 document.addEventListener("change",e=>{if(e.target.id==="importfile"&&e.target.files[0])importFile(e.target.files[0])});
+/* ---- back-ups ---- */
+const bkName=t=>new Date(t).toLocaleString("nl-BE",{weekday:"short",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+function bkDownload(rows,t){const n=new Date(t||Date.now()).toISOString().slice(0,10);dl.save({filename:`PrimeMoments_backup_${n}.json`,data:JSON.stringify({gemaakt:new Date(t||Date.now()).toISOString(),docs:rows},null,1)});try{localStorage.setItem("pm-bk-dl",String(Date.now()))}catch(e){}}
+async function openBackups(){
+  const {sc,close}=openSheet(`<h3>Back-ups</h3><p class="sub">Elke nacht bewaart je HQ automatisch een volledige kopie. Die blijft 60 dagen staan.</p>
+   <div class="actions" style="position:static;margin:0 0 14px;padding:0"><div><button class="btn" data-bknow>Nu een back-up maken</button><button class="btn ghost" data-bkdl>Download kopie naar je toestel</button></div></div>
+   <div data-bklist class="list"><div class="empty">Laden…</div></div>
+   <p class="note">Terugzetten zet al je boekingen, klanten, facturen… terug zoals ze op dat moment waren. Je huidige toestand wordt eerst zelf ook bewaard, dus je kan altijd terug. Tip: download één keer per maand een kopie en zet die bij je Klantenbestand.</p>
+   <div class="actions"><div></div><div><button class="btn ghost" data-close>Sluit</button></div></div>`,true);
+  const box=sc.querySelector("[data-bklist]");let armed=null;
+  const load=async()=>{const {data,error}=await SB.rpc("list_backups");if(error){box.innerHTML=`<div class="empty">Back-ups laden lukt niet.</div>`;return}
+    box.innerHTML=(data||[]).map(r=>`<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="t">${esc(bkName(r.snapshot_at))}</div><div class="s">${r.n} items</div></div><div class="amt" style="display:flex;gap:6px"><button class="btn ghost" data-bkget="${esc(r.snapshot_at)}">Download</button><button class="btn ghost" data-bkrestore="${esc(r.snapshot_at)}">Terugzetten</button></div></div>`).join("")||`<div class="empty">Nog geen back-ups.</div>`};
+  load();
+  sc.addEventListener("click",async e=>{const t=e.target.closest("button");if(!t)return;
+    if(t.hasAttribute("data-bknow")){t.disabled=true;const {error}=await SB.rpc("make_backup");t.disabled=false;toast(error?"Back-up mislukt":"Back-up gemaakt");load()}
+    if(t.hasAttribute("data-bkdl")){const rows=[];COLS.forEach(c=>(S[c]||[]).forEach(x=>{const {id,...data}=x;rows.push({collection:c,id,data})}));bkDownload(rows);toast("Gedownload")}
+    if(t.dataset.bkget){const {data,error}=await SB.from("docs_backup").select("collection,id,data").eq("snapshot_at",t.dataset.bkget);if(error){toast("Download mislukt");return}bkDownload(data,t.dataset.bkget)}
+    if(t.dataset.bkrestore){if(armed!==t.dataset.bkrestore){armed=t.dataset.bkrestore;t.textContent="Zeker? Tik opnieuw";return}
+      t.disabled=true;t.textContent="Bezig…";const {data,error}=await SB.rpc("restore_backup",{p_at:t.dataset.bkrestore});
+      if(error){toast("Terugzetten mislukt");t.disabled=false;t.textContent="Terugzetten";return}toast(data+" items teruggezet");close();setTimeout(()=>location.reload(),900)}});
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-backups]"))openBackups()});
 document.addEventListener("click",async e=>{if(e.target.closest("[data-logout]")){await SB.auth.signOut();location.hash="";location.reload()}});
 let started=false;
 /* voorbije shoots vanzelf afronden: dag erna -> Afgerond + In montage, na 3 weken -> Afgeleverd */
