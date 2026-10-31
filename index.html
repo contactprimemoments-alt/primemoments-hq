@@ -395,6 +395,7 @@ const ICON={
  inventaris:'<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/>',
  geld:'<path d="M17 6.5A6.5 6.5 0 1 0 17 17.5M4 10h9M4 14h9"/>',
  kpi:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ prive:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
  zoek:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
  taken:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
  team:'<circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8M14 14.6c.8-.3 1.6-.4 2.5-.4 2.3 0 4.2 1.5 5 4.3"/>',
@@ -403,7 +404,7 @@ const ICON={
  meer:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
 const ico=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
-const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"],["kpi","Cockpit"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
+const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"],["kpi","Cockpit"],["prive","Privé"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
 const MOBILE=["vandaag","agenda","boekingen","geld","meer"];
 const MAAND=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
 const MAANDL=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
@@ -684,7 +685,7 @@ V.partners=()=>{const R=[...new Set(S.partners.map(p=>p.rol||"Partner"))];
   ${R.map(r=>`<section class="block"><h2>${esc(r)} <span class="meta">${S.partners.filter(p=>(p.rol||"Partner")===r).length}</span></h2><div class="list">${S.partners.filter(p=>(p.rol||"Partner")===r).map(p=>{const n=S.bookings.filter(b=>(b.fotograaf||"").toLowerCase().includes((p.naam||"").toLowerCase().split(" ")[0])).length;return `<button class="row two" data-edit="partners:${p.id}"><div class="main-t"><div class="t">${esc(p.naam)}</div><div class="d">${[p.contact,p.notitie].filter(Boolean).map(esc).join(" · ")}</div><div class="pills">${pill(p.type,"p-neutral")}</div></div><div class="amt">${n?`${n}<small>boekingen</small>`:""}</div></button>`}).join("")}</div></section>`).join("")||`<div class="empty">Nog geen partners.</div>`}`};
 
 V.meer=()=>`<div class="ph"><div><div class="eyebrow">Prime Moments HQ</div><h1>Meer</h1></div><div class="acts"><button class="btn ghost" data-logout>Afmelden</button></div></div>
- <div class="menu"><button data-search>${ico("zoek")}<b>Zoeken</b><span>Klanten, boekingen, facturen</span></button><button data-backups>${ico("taken")}<b>Back-ups</b><span>Elke nacht automatisch</span></button>${[["kpi","Cockpit","KPI's, prognose, herkomst"],["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
+ <div class="menu"><button data-search>${ico("zoek")}<b>Zoeken</b><span>Klanten, boekingen, facturen</span></button><button data-backups>${ico("taken")}<b>Back-ups</b><span>Elke nacht automatisch</span></button>${[["kpi","Cockpit","KPI's, prognose, herkomst"],["prive","Privé","Loon + Prime Moments"],["aanvragen","Aanvragen",S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length+" in behandeling"],["klanten","Klanten","Vaste klanten en bedrijven"],["facturen","Facturen",S.invoices.filter(i=>invStatus(i)!=="Betaald").length+" open"],["aankopen","Aankopen","Kosten en investeringen"],["inventaris","Inventaris","Materiaal en garanties"],["taken","Taken",S.tasks.filter(t=>!t.klaar).length+" open"],["partners","Partners","Fotografen, drone, samenwerkingen"],["kennisbank","Kennisbank","Prijzen, regels, huisstijl"]].map(([h,t,s])=>`<a href="#${h}">${ico(h)}<b>${t}</b><span>${s}</span></a>`).join("")}</div>`;
 
 V.kennisbank=()=>`<div class="ph"><div><div class="eyebrow">Alles op één plek</div><h1>Kennisbank</h1></div></div>
 <div class="kb">
@@ -911,6 +912,38 @@ function fcBlock(){const sk=UI.fcScen||"realistisch";const F=expertForecast(sk);
   </section>`}
 document.addEventListener("click",e=>{const s=e.target.closest("[data-scen]");if(s){UI.fcScen=s.dataset.scen;render()}});
 document.addEventListener("change",async e=>{const i=e.target.closest("[data-maxshoots]");if(!i)return;const v=Math.max(1,Math.min(20,+i.value||8));S.settings.maxShoots=v;try{await db.doc("settings/finance").update({maxShoots:v})}catch(err){}render()});
+/* ================= privé: loon + Prime Moments ================= */
+function monthCost(k){const y=+k.slice(0,4);return S.purchases.reduce((a,p)=>{const z=(p.zakelijk??100)/100;const amt=(+p.bedrag||0)*z;const d=p.datum||"";const y0=+d.slice(0,4);if(!y0)return a;
+  if(p.soort==="Investering"){const n=+p.jaren||3;return a+(y>=y0&&y<y0+n?amt/n/12:0)}return a+(d.slice(0,7)===k?amt:0)},0)}
+V.prive=()=>{const loon=+S.settings.loon||0;const yNow=now().getFullYear();const yr=+(UI.pYear||yNow);const ymNow=iso(now()).slice(0,7);
+  const F=expertForecast("realistisch");const fm={};F.months.forEach(x=>fm[x.k]=x);
+  const n0=now();const estCost=[1,2,3].map(i=>{const d=new Date(n0.getFullYear(),n0.getMonth()-i,1);return monthCost(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`)}).reduce((a,b)=>a+b,0)/3;
+  const rows=[];for(let m=0;m<12;m++){const k=`${yr}-${String(m+1).padStart(2,"0")}`;const past=k<ymNow;const cur=k===ymNow;
+    const real=S.bookings.filter(b=>(b.datum||"").startsWith(k)&&b.datum<iso(now())).reduce((a,b)=>a+vid(b),0);
+    const f=fm[k];const pm=past?real:(cur?real+(f?f.booked+f.extra:0):(f?f.booked+f.extra+f.rec:0));
+    const cost=past||cur?monthCost(k):(k>=ymNow?Math.round(estCost):0);rows.push({k,m,loon,pm,cost,tot:loon+pm-cost,est:!past&&!cur})}
+  const sum=f=>rows.reduce((a,r)=>a+f(r),0);const tot=sum(r=>r.tot),pmNet=sum(r=>r.pm-r.cost),pmBr=sum(r=>r.pm);const share=tot?Math.round(pmNet/tot*100):0;
+  const avgP=F.avg||0;const need=avgP?Math.ceil(loon/avgP):0;const mx=Math.max(1,...rows.map(r=>r.loon+Math.max(0,r.pm)));
+  const years=[yNow,yNow+1];
+  return `<div class="ph"><div><div class="eyebrow">Alleen voor jou</div><h1>Privé</h1></div><div class="acts"><button class="btn ghost" data-loon>Loon: ${loon?eur(loon)+"/maand":"instellen"}</button></div></div>
+  <div class="chips" style="margin-bottom:16px">${years.map(y=>`<button class="chip" data-pyear="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}</div>
+  ${loon?"":`<div class="banner">Vul eerst je maandloon in via de knop rechtsboven.</div>`}
+  <div class="kgrid">
+   <div class="tile dark"><div class="k">Totaal inkomen ${yr}</div><div class="v">${eur(tot)}</div><div class="s">loon + Prime Moments${yr>=yNow?" (incl. verwachting)":""}</div></div>
+   <div class="tile"><div class="k">Gemiddeld per maand</div><div class="v">${eur(tot/12)}</div></div>
+   <div class="tile"><div class="k">Prime Moments ${yr}</div><div class="v">${eur(pmNet)}</div><div class="s">${eur(pmBr)} omzet − ${eur(pmBr-pmNet)} kosten</div></div>
+   <div class="tile"><div class="k">Aandeel Prime Moments</div><div class="v">${share}%</div><div class="s">van je totale inkomen</div></div>
+  </div>
+  ${need?`<div class="goal"><b>Prime Moments als volwaardig loon?</b><div class="note" style="margin-top:6px">Om je loon van ${eur(loon)} per maand te halen met Prime Moments, heb je ongeveer <b>${need} shoots per maand</b> nodig aan je gemiddelde prijs van ${eur(avgP)} (vóór kosten en belastingen).</div></div>`:""}
+  <div class="chart"><div class="bars">${rows.map(r=>`<div class="bar" style="cursor:default" title="${MAANDL[r.m]}: loon ${eur(r.loon)}, Prime Moments ${eur(r.pm)}${r.cost?", kosten "+eur(r.cost):""}"><span class="val">${eur(r.tot).replace("€ ","€")}</span>${r.pm>0?`<span class="seg ${r.est?"fx":"c"}" style="height:${r.pm/mx*150}px"></span>`:""}<span class="seg" style="height:${r.loon/mx*150}px;background:var(--line);border-radius:${r.pm>0?"0":"4px 4px 0 0"}"></span></div>`).join("")}</div><div class="mlabels">${rows.map(r=>`<span>${MAAND[r.m]}</span>`).join("")}</div></div>
+  <div class="legend"><span><i style="background:var(--line)"></i>Loon</span><span><i style="background:var(--accent)"></i>Prime Moments</span><span><i class="fxl"></i>Prime Moments (verwacht)</span></div>
+  <section class="block" style="margin-top:22px"><h2>Per maand</h2><div class="tbl-wrap"><table class="tbl" style="min-width:460px"><thead><tr><th>Maand</th><th>Loon</th><th>Prime Moments</th><th>Kosten</th><th>Totaal</th></tr></thead><tbody>
+   ${rows.map(r=>`<tr${r.est?' style="color:var(--muted)"':""}><td>${cap(MAANDL[r.m])}${r.est?" <small>verwacht</small>":""}</td><td>${eur(r.loon)}</td><td>${eur(r.pm)}</td><td>${r.cost?"− "+eur(r.cost):"–"}</td><td><b>${eur(r.tot)}</b></td></tr>`).join("")}
+   <tr><td><b>Totaal</b></td><td><b>${eur(sum(r=>r.loon))}</b></td><td><b>${eur(pmBr)}</b></td><td><b>${pmBr-pmNet?"− "+eur(pmBr-pmNet):"–"}</b></td><td><b>${eur(tot)}</b></td></tr></tbody></table></div>
+   <p class="note">Prime Moments = video-omzet (zonder fotografie) min je zakelijke kosten; investeringen gespreid over hun looptijd. Voor toekomstige maanden is de kost een schatting (gemiddelde van je laatste 3 maanden). Bedragen zijn vóór belastingen en sociale bijdragen. Toekomstige maanden volgen het realistische scenario uit je Cockpit.</p></section>`};
+document.addEventListener("click",e=>{const y=e.target.closest("[data-pyear]");if(y){UI.pYear=y.dataset.pyear;return render()}
+  if(e.target.closest("[data-loon]")){const {sc,close}=openSheet(`<form><h3>Maandloon</h3><div class="f"><label for="f-loon">Wat verdien je per maand met je vaste job? (€)</label><input id="f-loon" type="number" inputmode="decimal" value="${esc(S.settings.loon||"")}"></div><p class="note">Alleen zichtbaar voor jou in je HQ. Je team ziet dit nooit.</p><div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button><button class="btn">Bewaar</button></div></div></form>`);
+    sc.querySelector("form").addEventListener("submit",async ev=>{ev.preventDefault();const g=+sc.querySelector("#f-loon").value||0;try{await db.doc("settings/finance").update({loon:g});S.settings.loon=g;toast("Bewaard");close();render()}catch(_){toast("Bewaren mislukt")}})}});
 function monthsAhead(n){const r=[];const d=new Date(now().getFullYear(),now().getMonth(),1);for(let i=0;i<n;i++){r.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);d.setMonth(d.getMonth()+1)}return r}
 V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Set(S.bookings.map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
   const td=iso(now());const all=S.bookings.filter(b=>b.status!=="Geannuleerd");
