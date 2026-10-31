@@ -335,7 +335,7 @@ const MAANDL=["januari","februari","maart","april","mei","juni","juli","augustus
 const DAG=["ma","di","wo","do","vr","za","zo"];
 
 /* ================= helpers ================= */
-let db=null,dl=null,canWrite=false,ready=false;
+let db=null,dl={save:async({filename,data})=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:/\.csv$/.test(filename)?"text/csv;charset=utf-8":"text/html;charset=utf-8"}));a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}},canWrite=false,ready=false;
 const UI={mode:"owner",preview:null,crewErr:"",view:"vandaag",bFilter:"komend",bSearch:"",year:null,month:null,cal:null,calSel:null,fFilter:"alle",aYear:null,lostOpen:false};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -877,25 +877,30 @@ function openForm(col,id,preset){
     if(t==="check")return `<div class="f check full"><input type="checkbox" id="${fid}" name="${k}" ${v?"checked":""}><label for="${fid}">${l}</label></div>`;
     return `<div class="f${full?" full":""}"><label for="${fid}">${l}</label><input id="${fid}" name="${k}" type="${t}" value="${esc(v)}"${t==="number"?' inputmode="decimal" step="any"':""}></div>`}).join("")}</div>
    ${id?`<details class="hist"><summary style="cursor:pointer;font-size:13px;color:var(--muted)">Historiek</summary><div data-histbox>Laden…</div></details>`:""}
-   <div class="actions"><div>${id&&canWrite?`<button type="button" class="btn danger" data-del>Verwijder</button>`:""}${col==="leads"&&id&&canWrite?`<button type="button" class="btn ghost" data-tobook>Maak boeking</button>`:""}${col==="bookings"&&id&&canWrite?`<button type="button" class="btn ghost" data-toinv>Maak factuur</button>`:""}</div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button class="btn">Bewaar</button>`:""}</div></div></form>`;
+   <div class="actions"><div>${id&&canWrite?`<button type="button" class="btn danger" data-del>Verwijder</button>`:""}${col==="leads"&&id&&canWrite?`<button type="button" class="btn ghost" data-tobook>Maak boeking</button>`:""}${col==="bookings"&&id&&canWrite?`<button type="button" class="btn ghost" data-toinv="v">Voorschotfactuur</button><button type="button" class="btn ghost" data-toinv="e">Eindfactuur</button>`:""}</div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button class="btn">Bewaar</button>`:""}</div></div></form>`;
   const {sc,close}=openSheet(html);const form=sc.querySelector("form");let armed=false;
   const hd=sc.querySelector("details.hist");if(hd)hd.addEventListener("toggle",()=>{if(hd.open&&!hd.dataset.l){hd.dataset.l=1;loadHistory(col,id,sc.querySelector("[data-histbox]"))}});
   if(col==="invoices"&&!id){const d=form.elements.datum,v=form.elements.vervaldatum;d.addEventListener("change",()=>{v.value=addDays(d.value,7)})}
   sc.addEventListener("click",e=>{
     const del=e.target.closest("[data-del]");if(del){if(!armed){armed=true;del.textContent="Zeker? Tik opnieuw";return}remove(col,id).then(close)}
     if(e.target.closest("[data-tobook]")){close();openForm("bookings",null,{klant:it.naam,event:it.event,datum:it.datum,start:it.start,eind:it.eind,locatie:it.locatie,video:it.prijs,team:it.teamAanvraag&&it.bron?[it.bron]:[],fotograaf:it.teamAanvraag?tName(it.bron):"",status:"Gereserveerd",betaling:"Open",levering:"Nog te filmen",contact:it.contact,kanaal:it.kanaal,notitie:it.notitie,categorie:"Love Stories",_lead:id})}
-    if(e.target.closest("[data-toinv]")){close();invFromBooking(it)}});
+    {const ti=e.target.closest("[data-toinv]");if(ti){close();invFromBooking(it,ti.dataset.toinv)}}});
   form.addEventListener("submit",async e=>{e.preventDefault();const o={};F.f.forEach(([k,,t])=>{if(t==="sec")return;if(t==="team"){o[k]=[...form.querySelectorAll('input[name="team"]:checked')].map(x=>x.value);return}const el=form.elements[k];o[k]=t==="check"?el.checked:t==="number"?(el.value===""?null:+el.value):el.value.trim()});
     const first=F.f.find(x=>x[2]!=="sec"&&x[2]!=="select")[0];if(!o[first]){form.elements[first].focus();toast("Vul eerst "+F.f.find(x=>x[0]===first)[1].toLowerCase()+" in");return}
     if(col==="invoices"){o.regels=o.regelsTxt.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split("|");const amt=p.length>1?+(p.pop().replace(/[€\s]/g,"").replace(",",".")):0;const [oms,detail]=p.join("|").split(" — ");return{oms:oms.trim(),detail:(detail||"").trim(),bedrag:amt||0}});delete o.regelsTxt}
     if(col==="team"&&!id)o.sleutel=genKey();
+    if(col==="invoices"&&!id&&preset&&preset._booking)o._booking=preset._booking;
     const ok=await save(col,id,o);if(ok&&preset&&preset._lead){await db.doc("leads/"+preset._lead).update({status:"Geboekt"}).catch(()=>{})}
     if(ok)close()});
   setTimeout(()=>form.querySelector("input:not([type=checkbox]),select")?.focus(),60);
 }
-function invFromBooking(b){const co=S.companies.find(c=>(c.naam+" "+(c.handelsnaam||"")).toLowerCase().includes((b.klant||"").toLowerCase().split(" ")[0]));
-  const vs=b.status!=="Afgerond"&&daysTo(b.datum)>0;const amt=vs?Math.round(vid(b)*0.2):Math.max(0,vid(b)-(+b.ontvangen||0));
-  openForm("invoices",null,{type:vs?"Voorschotfactuur":"Factuur",nummer:nextInvNr(now().getFullYear()),datum:iso(now()),vervaldatum:addDays(iso(now()),7),opdracht:b.datum,status:"Open",klant:co?co.naam+(co.handelsnaam?` (${co.handelsnaam})`:""):b.klant,klantInfo:co?[co.adres,co.mail].filter(Boolean).join("\n"):"Particulier",btw:co?co.btw:"",taal:"NL",regels:[{oms:(vs?"Voorschot – ":"")+(b.event||b.pakket||"Videografie")+(b.datum?" "+dShort(b.datum):""),detail:"Cinematic film + highlightfilm.",bedrag:amt}],_booking:b.id})}
+function invFromBooking(b,kind){const co=S.companies.find(c=>(c.naam+" "+(c.handelsnaam||"")).toLowerCase().includes((b.klant||"").toLowerCase().split(" ")[0]));
+  const vs=kind?kind==="v":(b.status!=="Afgerond"&&daysTo(b.datum)>0);const tot=vid(b);
+  const wat=(b.event||b.pakket||"Videografie")+(b.datum?" "+dShort(b.datum):"");
+  const paidV=Math.max(+b.ontvangen||0,S.invoices.filter(x=>x._booking===b.id&&x.type==="Voorschotfactuur"&&x.status==="Betaald").reduce((a,x)=>a+invTotal(x),0));
+  const regels=vs?[{oms:"Voorschot (20%) – "+wat,detail:"Cinematic film + highlightfilm. Het voorschot bevestigt je datum.",bedrag:Math.round(tot*0.2)}]
+    :[{oms:wat,detail:"Cinematic film + highlightfilm.",bedrag:tot}].concat(paidV?[{oms:"Reeds betaald voorschot",detail:"",bedrag:-paidV}]:[]);
+  openForm("invoices",null,{type:vs?"Voorschotfactuur":"Factuur",nummer:nextInvNr(now().getFullYear()),datum:iso(now()),vervaldatum:addDays(iso(now()),7),opdracht:b.datum,status:"Open",klant:co?co.naam+(co.handelsnaam?` (${co.handelsnaam})`:""):b.klant,klantInfo:co?[co.adres,co.mail].filter(Boolean).join("\n"):"Particulier",btw:co?co.btw:"",taal:"NL",regels,_booking:b.id})}
 
 /* ================= invoice document ================= */
 function invoiceHTML(i){const T={NL:{inv:i.type||"Factuur",nr:"Factuurnummer",d:"Factuurdatum",v:"Vervaldatum",o:"Datum opdracht",van:"Van",aan:"Factuur aan",oms:"Omschrijving",n:"Aantal",p:"Prijs",b:"Bedrag",sub:"Subtotaal",k:"Korting",btw:"Btw (0% – vrijgesteld)",tb:"Te betalen",bg:"Betalingsgegevens",ben:"Begunstigde",hn:"Handelsnaam",med:"Mededeling",verm:"Vermeldingen",vrij:"Bijzondere vrijstellingsregeling kleine ondernemingen – btw niet van toepassing (art. 56bis WBTW).",pay:`Gelieve het bedrag te betalen vóór ${dShort(i.vervaldatum)}, met mededeling „Factuur ${i.nummer}”.`,dank:"Dank je voor je vertrouwen in Prime Moments.",fac:"Factuur"},
@@ -922,13 +927,20 @@ function invoiceHTML(i){const T={NL:{inv:i.type||"Factuur",nr:"Factuurnummer",d:
    <div><div style="${lab}">${T.bg}</div>${T.ben}: Hatice Kulak<br>${T.hn}: Prime Moments<br>IBAN ${CO.iban}<br>BIC ${CO.bic}<br>${T.med}: ${T.fac} ${esc(i.nummer)}</div>
    <div><div style="${lab}">${T.verm}</div>${T.vrij}<br><br>${T.pay}${i.extra?`<br><br>${esc(i.extra).replace(/\n/g,"<br>")}`:""}</div></div>
   <div style="text-align:center;margin-top:24px;color:#7A6C5F;font-size:10.5px">${T.dank}<br>${CO.naam} · ${CO.eig} · ${CO.adres}, ${CO.plaats} · ${CO.ond} · ${CO.web}</div>`}
+function invDoc(i){return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>${esc(i.type||"Factuur")} ${esc(i.nummer)} – ${esc(i.klant)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600&family=Poppins:wght@400;500;600&display=swap"><style>@page{size:A4;margin:16mm}body{margin:0;background:#fff;color:#0F0F0F;font-family:Poppins,system-ui,sans-serif;font-size:12px;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}.p{max-width:760px;margin:24px auto;padding:0 8px}</style></head><body><div class="p">${invoiceHTML(i)}</div><script>document.fonts&&document.fonts.ready.then(()=>setTimeout(()=>print(),300))<\/script></body></html>`}
+function printInvoice(i){const w=window.open("","_blank");if(!w){toast("Sta pop-ups toe om de PDF te maken");return}w.document.open();w.document.write(invDoc(i));w.document.close()}
+async function bookingPaid(i){const b=i._booking&&S.bookings.find(x=>x.id===i._booking);if(!b)return;const u={};
+  if(i.type==="Voorschotfactuur"){u.ontvangen=(+b.ontvangen||0)+invTotal(i);u.betaling="Voorschot";if(b.status==="Gereserveerd")u.status="Bevestigd"}
+  else{u.ontvangen=vid(b);u.betaling="Betaald"}
+  await db.doc("bookings/"+b.id).update(u).catch(()=>{})}
 function openInvoice(id){const i=S.invoices.find(x=>x.id===id);if(!i)return;const st=invStatus(i);
   const {sc,close}=openSheet(`<h3>${esc(i.type||"Factuur")} ${esc(i.nummer)}</h3><p class="sub">${esc(i.klant)} · ${eur2(invTotal(i))} · ${pill(st)}${i.betaaldOp?" · betaald op "+dl_(i.betaaldOp):""}</p>
    <div class="paper-wrap"><div class="paper">${invoiceHTML(i)}</div></div>
-   <div class="actions"><div>${canWrite&&st!=="Betaald"?`<button class="btn" data-paid>Markeer als betaald</button>`:""}${canWrite&&st==="Betaald"?`<button class="btn ghost" data-unpaid>Toch niet betaald</button>`:""}${dl?`<button class="btn ghost" data-dlinv>Bewaar als bestand</button>`:""}</div><div>${canWrite?`<button class="btn ghost" data-editinv>Bewerk</button>`:""}<button class="btn ghost" data-close>Sluit</button></div></div>
-   <p class="note">Bewaar als bestand geeft een .html-factuur. Open die in je browser en kies Afdrukken › Bewaar als pdf.</p>`,true);
+   <div class="actions"><div>${canWrite&&st!=="Betaald"?`<button class="btn" data-paid>Markeer als betaald</button>`:""}${canWrite&&st==="Betaald"?`<button class="btn ghost" data-unpaid>Toch niet betaald</button>`:""}<button class="btn ghost" data-pdf>PDF</button></div><div>${canWrite?`<button class="btn ghost" data-editinv>Bewerk</button>`:""}<button class="btn ghost" data-close>Sluit</button></div></div>
+   <p class="note">PDF opent je factuur om af te drukken. Kies daar <b>Bewaar als PDF</b> (op je gsm: Deel › Afdrukken › nog eens Deel).</p>`,true);
   sc.addEventListener("click",async e=>{
-    if(e.target.closest("[data-paid]")){await save("invoices",id,{status:"Betaald",betaaldOp:iso(now())});close()}
+    if(e.target.closest("[data-paid]")){const ok=await save("invoices",id,{status:"Betaald",betaaldOp:iso(now())});if(ok)await bookingPaid(i);close()}
+    if(e.target.closest("[data-pdf]"))printInvoice(i);
     if(e.target.closest("[data-unpaid]")){await save("invoices",id,{status:"Open",betaaldOp:""});close()}
     if(e.target.closest("[data-editinv]")){close();openForm("invoices",id)}
     if(e.target.closest("[data-dlinv]")){const doc=`<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>${esc(i.type||"Factuur")} ${esc(i.nummer)} – ${esc(i.klant)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600&family=Poppins:wght@400;500;600&display=swap"><style>@page{size:A4;margin:16mm}body{margin:0;background:#fff;color:#0F0F0F;font-family:Poppins,system-ui,sans-serif;font-size:12px;line-height:1.5}.p{max-width:760px;margin:24px auto;padding:0 8px}</style></head><body><div class="p">${invoiceHTML(i)}</div></body></html>`;
