@@ -70,6 +70,7 @@ nav.side .brand,nav.side .grp,nav.side .newbtn,nav.side .d-only{display:none}
 .logo i{display:inline-block;width:0;height:0;border-left:6px solid #fff;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-left:3px}
 .brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-top:8px}
 .fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(82px + env(safe-area-inset-bottom,0px));z-index:25;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-size:28px;line-height:1;box-shadow:0 8px 22px rgba(0,0,0,.2);cursor:pointer}
+.fab.fab-s{bottom:calc(148px + env(safe-area-inset-bottom,0px));width:48px;height:48px;right:max(22px,env(safe-area-inset-right,0px));background:var(--surface);color:var(--fg);border:1px solid var(--line);padding:0}.fab-s svg{display:block;margin:auto}
 
 /* ---- page chrome ---- */
 .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
@@ -384,7 +385,7 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
   <nav class="side" aria-label="Hoofdmenu" id="nav"></nav>
   <main id="main"><div class="empty">Je headquarter laadt…</div></main>
 </div>
-<button class="fab" id="fab" aria-label="Nieuw toevoegen">+</button>
+<button class="fab" id="fab" aria-label="Nieuw toevoegen">+</button><button class="fab fab-s" data-search aria-label="Zoeken"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
 
 <script>
 (function(){
