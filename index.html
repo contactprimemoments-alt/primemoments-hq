@@ -362,6 +362,9 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .sp-row span{font-size:13px;color:var(--muted)}.sp-row .sp-end{text-align:right;font-family:var(--display);font-size:22px;font-weight:600}.sp-row small{grid-column:1/-1;color:var(--muted);font-size:11.5px}
 .sd-vertrek{margin:6px 0 2px;font-size:14px;color:var(--fg);background:var(--bg);border-radius:10px;padding:8px 10px;display:inline-block}
 .row .d.vt{color:var(--accent);font-weight:500}
+.kasbox{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}@media (max-width:640px){.kasbox{grid-template-columns:1fr}}
+.kasbox>div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column}
+.kasbox span{font-size:12px;color:var(--muted)}.kasbox b{font-family:var(--display);font-size:24px;font-weight:600}.kasbox .bad b{color:var(--bad)}.kasbox .ok b{color:var(--ok)}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -394,7 +397,7 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 (function(){
 /* ================= constants ================= */
 const CO={naam:"Prime Moments",eig:"Hatice Kulak (eenmanszaak)",adres:"Pastoor Paquaylaan 164",plaats:"3550 Heusden, België",ond:"BE 1039.371.331",mail:"contact.primemoments@gmail.com",tel:"+32 468 37 10 09",iban:"BE39 7390 3465 9919",bic:"KREDBEBB",web:"primemoments.live"};
-const COLS=["bookings","leads","tasks","partners","recurring","companies","invoices","purchases","inventory","blocks","team","swaps"];
+const COLS=["bookings","leads","tasks","partners","recurring","companies","invoices","purchases","inventory","blocks","team","swaps","kas"];
 const FEED_URL="https://unktazjceutqoduzjnfq.supabase.co/functions/v1/agenda";
 const TEAM_URL=new URL("team/",location.href.split("#")[0]).href;
 const S={settings:{drempel:{"2026":961.08,"2027":1922.16},usd:0.86}};COLS.forEach(c=>S[c]=[]);
@@ -407,6 +410,7 @@ const ICON={
  facturen:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
  aankopen:'<path d="M3 4h2l2.5 11h11L21 7H6.2"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',
  inventaris:'<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/>',
+ kas:'<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 11h18M7 15h3"/>',
  geld:'<path d="M17 6.5A6.5 6.5 0 1 0 17 17.5M4 10h9M4 14h9"/>',
  kpi:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
  prive:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -418,7 +422,7 @@ const ICON={
  meer:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
 const ico=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
-const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"],["kpi","Cockpit"],["prive","Privé"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
+const NAV=[["Overzicht",[["vandaag","Vandaag"],["agenda","Agenda"],["kpi","Cockpit"],["prive","Privé"]]],["Klanten & verkoop",[["aanvragen","Aanvragen"],["boekingen","Boekingen"],["klanten","Klanten"]]],["Administratie",[["facturen","Facturen"],["aankopen","Aankopen"],["inventaris","Inventaris"],["geld","Rapporten"],["kas","Kas & bank"]]],["Werk",[["team","Team"],["taken","Taken"],["partners","Partners"],["kennisbank","Kennisbank"]]]];
 const MOBILE=["vandaag","agenda","boekingen","geld","meer"];
 const MAAND=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
 const MAANDL=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
@@ -605,6 +609,41 @@ V.boekingen=()=>{
 
 const LSTAT=["Nieuw","Offerte gestuurd","Wacht op antwoord","Geboekt","Verloren"];
 const reservaties=()=>sorted(S.bookings.filter(b=>(b.status==="Gereserveerd"||b.status==="On hold")&&(!b.datum||daysTo(b.datum)>=0)));
+/* ================= kas & bank ================= */
+const invOfBooking=b=>S.invoices.filter(i=>i.status==="Betaald"&&(i._booking===b.id||(b.factuur&&i.nummer&&String(b.factuur).includes(i.nummer))));
+const recvOf=b=>b.betaling==="Betaald"?vid(b):(+b.ontvangen||0);
+function bankOf(b){const r=recvOf(b);if(b.betaalVia==="Bank")return r;let x=invOfBooking(b).reduce((a,i)=>a+invTotal(i),0);if(b.betaalVia==="Cash + bank")x=Math.max(x,+b.ontvangenBank||0);if(b.betaalVia==="Cash")x=0;return Math.min(r,x)}
+function kasCalc(){const B=S.bookings.filter(b=>b.status!=="Geannuleerd"&&b.status!=="On hold"&&recvOf(b)>0);
+  const rows=B.map(b=>({b,r:recvOf(b),bank:bankOf(b)})).map(x=>Object.assign(x,{cash:x.r-x.bank}));
+  const linked=new Set();S.bookings.forEach(b=>invOfBooking(b).forEach(i=>linked.add(i.id)));
+  const loose=S.invoices.filter(i=>i.status==="Betaald"&&!linked.has(i.id));
+  const bank=rows.reduce((a,x)=>a+x.bank,0)+loose.reduce((a,i)=>a+invTotal(i),0);const cashIn=rows.reduce((a,x)=>a+x.cash,0);
+  const K=sorted(S.kas||[],"datum");const tel=K.filter(k=>k.soort==="Telling").slice(-1)[0];
+  const uit=K.filter(k=>k.soort==="Uit").reduce((a,k)=>a+(+k.bedrag||0),0),inX=K.filter(k=>k.soort==="In").reduce((a,k)=>a+(+k.bedrag||0),0);
+  const verwacht=cashIn+inX-uit;return{rows,loose,bank,cashIn,uit,inX,verwacht,tel,K,totaal:bank+cashIn}}
+V.kas=()=>{const k=kasCalc();const tel=k.tel?+k.tel.bedrag||0:null;const diff=tel==null?null:tel-k.verwacht;
+  return `<div class="ph"><div><div class="eyebrow">Alleen voor jou</div><h1>Kas & bank</h1></div><div class="acts"><button class="btn ghost" data-kasnew="Uit">− Cash uit</button><button class="btn ghost" data-kasnew="In">+ Cash in</button><button class="btn" data-kasnew="Telling">Doos geteld</button></div></div>
+  <div class="kgrid">
+   <div class="tile dark"><div class="k">Totaal ontvangen</div><div class="v">${eur(k.totaal)}</div><div class="s">bank + cash, van alle shoots</div></div>
+   <div class="tile"><div class="k">Op de bank</div><div class="v">${eur(k.bank)}</div><div class="s">officieel (facturen + overschrijvingen)</div></div>
+   <div class="tile"><div class="k">Cash ontvangen</div><div class="v">${eur(k.cashIn)}</div><div class="s">volgens je boekingen</div></div>
+   <div class="tile"><div class="k">Cash uitgegeven</div><div class="v">${eur(k.uit)}</div><div class="s">materiaal, team, …</div></div>
+  </div>
+  <div class="kasbox">
+   <div><span>Zou in je doos moeten zitten</span><b>${eur(k.verwacht)}</b></div>
+   <div><span>Geteld in je doos${k.tel?" ("+dl_(k.tel.datum)+")":""}</span><b>${tel==null?"–":eur(tel)}</b></div>
+   <div class="${diff==null?"":Math.abs(diff)<1?"ok":diff<0?"bad":"ok"}"><span>${diff==null?"Verschil":diff<0?"Ontbreekt":diff>0?"Meer dan verwacht":"Klopt"}</span><b>${diff==null?"tel je doos":eur(Math.abs(diff))}</b></div>
+  </div>
+  ${diff!=null&&diff<-1?`<p class="note">Ontbreekt er iets? Meestal is dat cash die je aan je team (Bahri, Tuğba, tweede shooter) of voor iets anders hebt gegeven. Voeg dat toe met <b>− Cash uit</b>, dan klopt je doos weer.</p>`:""}
+  <div class="cols"><div>
+   <section class="block"><h2>Cash bewegingen <span class="meta">${k.K.length}</span></h2>${k.K.length?`<div class="list">${k.K.slice().reverse().map(x=>`<button class="row two" data-edit="kas:${x.id}"><div class="main-t"><div class="t">${esc(x.omschrijving||x.soort)}</div><div class="d">${dl_(x.datum)} · ${esc(x.soort)}${x.wie?" · "+esc(x.wie):""}</div></div><div class="amt" style="color:${x.soort==="Uit"?"var(--bad)":x.soort==="In"?"var(--ok)":"var(--fg)"}">${x.soort==="Uit"?"− ":x.soort==="In"?"+ ":"= "}${eur(+x.bedrag||0)}</div></button>`).join("")}</div>`:`<div class="empty">Nog niets genoteerd.</div>`}</section>
+  </div><div>
+   <section class="block"><h2>Per shoot <span class="meta">cash / bank</span></h2><div class="tbl-wrap"><table class="tbl" style="min-width:380px"><thead><tr><th>Klant</th><th>Ontvangen</th><th>Bank</th><th>Cash</th></tr></thead><tbody>
+    ${k.rows.sort((a,b)=>(a.b.datum||"").localeCompare(b.b.datum||"")).map(x=>`<tr data-edit="bookings:${x.b.id}" style="cursor:pointer"><td style="text-align:left">${esc(x.b.klant)} <small style="color:var(--muted)">${dShort(x.b.datum)}</small></td><td>${eur(x.r)}</td><td>${x.bank?eur(x.bank):"–"}</td><td>${x.cash?eur(x.cash):"–"}</td></tr>`).join("")}
+    ${k.loose.map(i=>`<tr><td style="text-align:left">${esc(i.klant)} <small style="color:var(--muted)">factuur ${esc(i.nummer)}</small></td><td>${eur(invTotal(i))}</td><td>${eur(invTotal(i))}</td><td>–</td></tr>`).join("")}
+   </tbody></table></div><p class="note">Een shoot staat op <b>bank</b> als er een betaalde factuur aan hangt of als je bij de boeking "Betaald via: Bank" kiest. De rest telt als cash. Pas het aan bij Bewerk › Prijs & betaling.</p></section>
+  </div></div>`};
+document.addEventListener("click",e=>{const t=e.target.closest("[data-kasnew]");if(t)openForm("kas",null,{soort:t.dataset.kasnew,datum:iso(now())})});
 V.aanvragen=()=>{
   const act=LSTAT.slice(0,3);const L=st=>S.leads.filter(l=>(l.status||"Nieuw")===st).sort((a,b)=>(!!b.teamAanvraag-!!a.teamAanvraag)||(b.created||b.ontvangen||"").localeCompare(a.created||a.ontvangen||""));
   const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw"?pill("Prioriteit","p-prio")+" ":""}${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.teamAanvraag?"van "+tName(l.bron):(l.kanaal||""),l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
@@ -1092,11 +1131,12 @@ const STAT=["Gereserveerd","Bevestigd","On hold","Afgerond","Geannuleerd"];
 const FORMS={
  bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["locatie","Locatie","text"],["start","Van","time"],["eind","Tot","time"],
   ["status","Status","seg",1,STAT],["categorie","Categorie","seg",1,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","pak",1],
-  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["ontvangen","Al ontvangen (€)","number"],["betaling","Betaalstatus","seg",1,["Open","Voorschot","Betaald","Te checken"]],["foto","Foto (€, telt niet mee)","number"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
+  ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["ontvangen","Al ontvangen (€)","number"],["betaling","Betaalstatus","seg",1,["Open","Voorschot","Betaald","Te checken"]],["betaalVia","Betaald via","seg",1,["Cash","Bank","Cash + bank"]],["ontvangenBank","Waarvan op de bank (€, bij cash + bank)","number"],["foto","Foto (€, telt niet mee)","number"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
   ["_","Team & levering","sec"],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["levering","Levering","seg",1,["Nog te filmen","In montage","Afgeleverd"]],["notitie","Notities (alleen voor jou)","textarea",1],
   ["_","Meer details","more"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["fotoKost","Fotograaf krijgt (€)","number"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["montageUren","Montage-uren (jouw tijd)","number"],["reisMinHand","Reistijd zelf invullen (min, overschrijft de berekening)","number"]]},
  team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Helper","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
  leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via","Team"]],["event","Event","text"],["datum","Gevraagde datum","date"],["start","Van","time"],["eind","Tot","time"],["locatie","Locatie","text",1],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
+ kas:{t:"Kasbeweging",f:[["omschrijving","Omschrijving (bv. Bahri – Seher kına, camera)","text",1],["soort","Soort","seg",1,["Uit","In","Telling"]],["datum","Datum","date"],["bedrag","Bedrag (€) – bij Telling: wat er in je doos zit","number"],["wie","Aan/van wie (optioneel)","text"]]},
  tasks:{t:"Taak",f:[["titel","Taak","text",1],["deadline","Tegen","date"],["klaar","Klaar","check"],["notitie","Notitie","textarea",1]]},
  partners:{t:"Partner",f:[["naam","Naam","text",1],["rol","Rol","select",0,["Fotograaf","Dronepiloot","Second shooter","Locatie","Partner"]],["type","Samenwerking","text"],["contact","Contact","text",1],["notitie","Notities","textarea",1]]},
  recurring:{t:"Vaste klant",f:[["naam","Naam","text",1],["bedrag","Bedrag per maand (€)","number"],["status","Status","select",0,["Actief","In afwachting","Gestopt"]],["sinds","Sinds","date"],["notitie","Afspraken","textarea",1]]},
