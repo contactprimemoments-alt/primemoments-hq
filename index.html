@@ -467,6 +467,7 @@ function nextInvNr(year){const nums=S.invoices.filter(i=>(i.nummer||"").startsWi
 /* ================= navigation ================= */
 function badge(v){if(!ready)return "";
   if(v==="vandaag"){const n=S.bookings.filter(b=>flags(b).length).length+S.leads.filter(l=>l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw").length;return n||""}
+  if(v==="aanvragen"){const n=openLeads().filter(l=>(l.status||"Nieuw")==="Nieuw").length;return n||""}
   if(v==="facturen"){const n=S.invoices.filter(i=>invStatus(i)==="Vervallen").length;return n||""}
   if(v==="taken"){const n=S.tasks.filter(t=>!t.klaar).length;return n||""}
   if(v==="aanvragen"){const n=S.leads.filter(l=>["Nieuw"].includes(l.status||"Nieuw")).length;return n||""}
@@ -494,7 +495,7 @@ function rowB(b,opt={}){const d=pd(b.datum);const fl=opt.noFlags?[]:flags(b);
     <div class="d">${[b.start?(b.eind?`${esc(b.start)}–${esc(b.eind)}`:esc(b.start)):"",esc(b.locatie||"")].filter(Boolean).join(" · ")}</div>
     <div class="pills">${pill(b.status)}${teamChips(b)}${fl.map(f=>pill(f,"p-bad")).join("")}${b.betaling==="Betaald"?pill("Betaald"):b.betaling==="Voorschot"?pill("Voorschot"):""}${b.levering==="In montage"?pill("In montage","p-In-montage"):""}</div></div>
    <div class="amt">${b.video?eur(b.video):(b.gratis?"<small>gratis</small>":"–")}${b.foto?`<small>+ foto ${eur(b.foto)}</small>`:""}</div></button>`;}
-function rowQ(b,kind){const lab=kind==="lev"?"✓ Afgeleverd":"✓ Betaald";return `<div class="rowq">${rowB(b,{noFlags:1})}${canWrite?`<button type="button" class="qbtn" data-q="${kind}:${b.id}">${lab}</button>`:""}</div>`}
+function rowQ(b,kind){const lab=kind==="lev"?"✓ Afgeleverd":kind==="conf"?"✓ Bevestigd":"✓ Betaald";return `<div class="rowq">${rowB(b,{noFlags:1})}${canWrite?`<button type="button" class="qbtn" data-q="${kind}:${b.id}">${lab}</button>`:""}</div>`}
 function rowInv(i){const st=invStatus(i);return `<button class="row" data-inv="${i.id}">
   <div class="date"><b style="font-size:15px">${esc((i.nummer||"").split("-")[1]||"?")}</b><span>${esc((i.nummer||"").split("-")[0]||"")}</span></div>
   <div class="main-t"><div class="t">${esc(i.klant)}</div><div class="d">${esc(i.type||"Factuur")} · ${dl_(i.datum)}${st!=="Betaald"&&i.vervaldatum?" · vervalt "+dl_(i.vervaldatum):""}</div><div class="pills">${pill(st)}</div></div>
@@ -585,13 +586,16 @@ V.boekingen=()=>{
   ${html||`<div class="empty">Geen boekingen in deze selectie.</div>`}`};
 
 const LSTAT=["Nieuw","Offerte gestuurd","Wacht op antwoord","Geboekt","Verloren"];
+const reservaties=()=>sorted(S.bookings.filter(b=>(b.status==="Gereserveerd"||b.status==="On hold")&&(!b.datum||daysTo(b.datum)>=0)));
 V.aanvragen=()=>{
   const act=LSTAT.slice(0,3);const L=st=>S.leads.filter(l=>(l.status||"Nieuw")===st).sort((a,b)=>(!!b.teamAanvraag-!!a.teamAanvraag)||(b.created||b.ontvangen||"").localeCompare(a.created||a.ontvangen||""));
   const rowL=l=>`<button class="row two" data-edit="leads:${l.id}"><div class="main-t"><div class="t">${l.teamAanvraag&&(l.status||"Nieuw")==="Nieuw"?pill("Prioriteit","p-prio")+" ":""}${esc(l.naam)}${l.event?` <span style="color:var(--muted);font-weight:400">· ${esc(l.event)}</span>`:""}</div><div class="d">${[l.datum?"voor "+dl_(l.datum):"",l.teamAanvraag?"van "+tName(l.bron):(l.kanaal||""),l.ontvangen?"binnen "+dl_(l.ontvangen):""].filter(Boolean).map(esc).join(" · ")}</div>${l.notitie?`<div class="d">${esc(l.notitie)}</div>`:""}</div><div class="amt">${l.prijs?eur(l.prijs):""}${l.datum&&S.bookings.some(b=>b.datum===l.datum&&b.status!=="Geannuleerd")&&!["Geboekt","Verloren"].includes(l.status)?`<small style="color:var(--bad)">datum al bezet</small>`:""}</div></button>`;
   const geboekt=L("Geboekt"),verloren=L("Verloren");
   const conv=geboekt.length+verloren.length?Math.round(geboekt.length/(geboekt.length+verloren.length)*100):0;
+  const RS=reservaties();
   return `<div class="ph"><div><div class="eyebrow">Pipeline</div><h1>Aanvragen</h1></div><div class="acts"><button class="btn" data-new="leads">+ Aanvraag</button></div></div>
-  <div class="tiles"><div class="tile"><div class="k">In behandeling</div><div class="v">${act.reduce((a,s)=>a+L(s).length,0)}</div></div><div class="tile"><div class="k">Openstaande offertes</div><div class="v">${eur(act.reduce((a,s)=>a+L(s).reduce((x,l)=>x+(+l.prijs||0),0),0))}</div></div><div class="tile"><div class="k">Geboekt / verloren</div><div class="v">${geboekt.length} / ${verloren.length}</div><div class="s">${conv}% omgezet</div></div></div>
+  <div class="tiles"><div class="tile"><div class="k">Reservaties</div><div class="v">${RS.length}</div><div class="s">${eur(RS.reduce((a,b)=>a+(+b.video||0),0))} als ze doorgaan</div></div><div class="tile"><div class="k">In behandeling</div><div class="v">${act.reduce((a,s)=>a+L(s).length,0)}</div></div><div class="tile"><div class="k">Openstaande offertes</div><div class="v">${eur(act.reduce((a,s)=>a+L(s).reduce((x,l)=>x+(+l.prijs||0),0),0))}</div></div><div class="tile"><div class="k">Geboekt / verloren</div><div class="v">${geboekt.length} / ${verloren.length}</div><div class="s">${conv}% omgezet</div></div></div>
+  <section class="block"><h2>Reservaties <span class="meta">datum vastgezet, nog niet bevestigd</span></h2>${RS.length?`<div class="list">${RS.map(b=>rowQ(b,"conf")).join("")}</div>`:`<div class="empty">Geen open reservaties.</div>`}</section>
   ${act.map(s=>`<section class="block"><h2>${s} <span class="meta">${L(s).length}</span></h2>${L(s).length?`<div class="list">${L(s).map(rowL).join("")}</div>`:`<div class="empty">Niets in deze stap.</div>`}</section>`).join("")}
   <section class="block"><h2>Afgesloten <span class="meta"><button class="btn ghost sm" data-act="lost">${UI.lostOpen?"verberg":"toon"} ${geboekt.length+verloren.length}</button></span></h2>${UI.lostOpen?`<div class="list">${[...geboekt,...verloren].map(rowL).join("")}</div>`:""}</section>
   <p class="note">Elke DM of WhatsApp met een vraag voor een datum of offerte komt hier. Open een aanvraag en tik "Maak boeking" zodra ze vastleggen.</p>`};
@@ -1217,7 +1221,8 @@ function openBooking(id){const get=()=>S.bookings.find(x=>x.id===id);if(!get())r
 document.addEventListener("click",async e=>{const q=e.target.closest("[data-q]");if(!q)return;e.preventDefault();e.stopPropagation();
   const [k,id]=q.dataset.q.split(":");const b=S.bookings.find(x=>x.id===id);if(!b)return;q.disabled=true;
   if(k==="lev")await save("bookings",id,Object.assign({levering:"Afgeleverd"},b.status==="Bevestigd"?{status:"Afgerond"}:{}));
-  if(k==="pay")await save("bookings",id,{betaling:"Betaald",ontvangen:vid(b)})},true);
+  if(k==="pay")await save("bookings",id,{betaling:"Betaald",ontvangen:vid(b)});
+  if(k==="conf")await save("bookings",id,{status:"Bevestigd"})},true);
 function openForm(col,id,preset,direct){
   if(col==="invoices")return openInvEditor(id,preset);
   if(col==="bookings"&&id&&!direct)return openBooking(id);
@@ -1488,7 +1493,7 @@ function newPwPage(msg){$("#nav").hidden=true;$("#fab").hidden=true;document.que
   $("#pwform").addEventListener("submit",async e=>{e.preventDefault();const a=$("#n-pw").value,b=$("#n-pw2").value;if(a!==b)return newPwPage("De twee wachtwoorden zijn niet gelijk.");
     const {error}=await SB.auth.updateUser({password:a});if(error)return newPwPage(error.message);history.replaceState(null,"",location.pathname);toast("Nieuw wachtwoord bewaard");start()})}
 let recovering=/type=recovery/.test(location.hash);
-SB.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovering=true;newPwPage()}});
+if(SB.auth.onAuthStateChange)SB.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovering=true;newPwPage()}});
 async function start(){const hq=location.hash+location.search;if(/error_code=|error=access_denied/.test(hq)){history.replaceState(null,"",location.pathname);return loginPage("Deze resetlink is verlopen of al gebruikt. Tik op 'Wachtwoord vergeten?' voor een nieuwe mail en klik op de nieuwste link.")}
   const {data:{session}}=await SB.auth.getSession();if(recovering)return session?newPwPage():loginPage("De link is verlopen. Vraag een nieuwe mail aan.");if(!session)return loginPage();
   const {data:adm}=await SB.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
