@@ -360,6 +360,8 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .sp-lab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .sp-row{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}.sp-row:first-of-type{border-top:0}
 .sp-row span{font-size:13px;color:var(--muted)}.sp-row .sp-end{text-align:right;font-family:var(--display);font-size:22px;font-weight:600}.sp-row small{grid-column:1/-1;color:var(--muted);font-size:11.5px}
+.sd-vertrek{margin:6px 0 2px;font-size:14px;color:var(--fg);background:var(--bg);border-radius:10px;padding:8px 10px;display:inline-block}
+.row .d.vt{color:var(--accent);font-weight:500}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -447,6 +449,21 @@ function toast(t){document.querySelectorAll(".toast").forEach(e=>e.remove());con
 const toReceive=b=>{if(b.status==="Geannuleerd"||b.status==="On hold"||b.status==="Gereserveerd"||b.betaling==="Betaald"||b.betaling==="Te checken")return 0;return Math.max(0,vid(b)-(+b.ontvangen||0))};
 function sameDay(b){if(!b.datum||b.status==="Geannuleerd")return [];return S.bookings.filter(o=>o.id!==b.id&&o.datum===b.datum&&o.status!=="Geannuleerd")}
 const tmin=t=>{if(!t||!/^\d\d:\d\d/.test(t))return null;return +t.slice(0,2)*60+ +t.slice(3,5)};
+/* ================= vertrekuur (reistijd vanaf thuis) ================= */
+const cleanAddr=s=>{s=(s||"").split(/\s+\/\s+|\s+→\s+|\s+->\s+/)[0].replace(/\([^)]*\)/g,"").replace(/^[A-Za-zÀ-ÿçğışöüÇĞİŞÖÜ ]{2,20}:\s*/,"").trim();return /nog navragen|nog te bespreken|^$/i.test(s)?"":s};
+const hhmm=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
+const durTxt=m=>m>=60?Math.floor(m/60)+"u"+String(m%60).padStart(2,"0"):m+" min";
+function vertrek(b){const st=tmin(b.start);const mins=b.reisMinHand!=null&&b.reisMinHand!==""?+b.reisMinHand:(b.reisAdres===cleanAddr(b.locatie)?b.reisMin:null);
+  if(st===null||mins==null)return null;const drive=b.reisMinHand!=null&&b.reisMinHand!==""?mins:Math.round(mins*1.15);let t=st-30-drive;t=Math.floor(t/5)*5;
+  return{tijd:hhmm(t),drive,km:b.reisKm,aan:hhmm(st-30),hand:b.reisMinHand!=null&&b.reisMinHand!==""}}
+const vertrekTxt=b=>{const v=vertrek(b);return v?`Vertrek ±${v.tijd} · ${durTxt(v.drive)} rijden${v.km&&!v.hand?" ("+Math.round(v.km)+" km)":""} · om ${v.aan} ter plaatse`:""};
+let routeBusy=false;const routeTried=new Set();
+async function fillRoutes(){if(routeBusy||!canWrite||!SB.functions)return;routeBusy=true;
+  try{const todo=S.bookings.filter(b=>b.status!=="Geannuleerd"&&b.datum&&daysTo(b.datum)>=0&&daysTo(b.datum)<=400&&cleanAddr(b.locatie)&&b.reisAdres!==cleanAddr(b.locatie)&&!routeTried.has(b.id+"|"+cleanAddr(b.locatie)));
+    for(const b of todo.slice(0,40)){const a=cleanAddr(b.locatie);routeTried.add(b.id+"|"+a);
+      try{const {data,error}=await SB.functions.invoke("route",{body:{address:a}});if(error)continue;
+        await db.doc("bookings/"+b.id).update(data&&data.found?{reisAdres:a,reisMin:data.minutes,reisKm:data.km}:{reisAdres:a,reisMin:null,reisKm:null})}catch(e){}
+      await new Promise(r=>setTimeout(r,1200))}}finally{routeBusy=false}}
 function overlap(b){const s1=tmin(b.start);if(s1===null)return false;let e1=tmin(b.eind);if(e1===null)e1=s1+60;if(e1<=s1)e1+=1440;
   return sameDay(b).some(o=>{const s2=tmin(o.start);if(s2===null)return false;let e2=tmin(o.eind);if(e2===null)e2=s2+60;if(e2<=s2)e2+=1440;return s1<e2&&s2<e1})}
 function flags(b){const f=[];if(b.status==="Geannuleerd"||b.status==="On hold")return f;const dt=daysTo(b.datum);
@@ -493,7 +510,7 @@ function rowB(b,opt={}){const d=pd(b.datum);const fl=opt.noFlags?[]:flags(b);
   return `<button class="row${b.status==="Geannuleerd"?" cancel":""}" data-edit="bookings:${b.id}">
    <div class="date${d?"":" none"}">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}${d.getFullYear()!==now().getFullYear()?" '"+String(d.getFullYear()).slice(2):""}</span>`:`<b>?</b><span>datum</span>`}</div>
    <div class="main-t"><div class="t">${esc(b.klant)}${b.event?` <span style="color:var(--muted);font-weight:400">· ${esc(b.event)}</span>`:""}</div>
-    <div class="d">${[b.start?(b.eind?`${esc(b.start)}–${esc(b.eind)}`:esc(b.start)):"",esc(b.locatie||"")].filter(Boolean).join(" · ")}</div>
+    <div class="d">${[b.start?(b.eind?`${esc(b.start)}–${esc(b.eind)}`:esc(b.start)):"",esc(b.locatie||"")].filter(Boolean).join(" · ")}</div>${!opt.noFlags&&vertrek(b)&&daysTo(b.datum)>=0?`<div class="d vt">🚗 vertrek ±${vertrek(b).tijd}</div>`:""}
     <div class="pills">${pill(b.status)}${teamChips(b)}${fl.map(f=>pill(f,"p-bad")).join("")}${b.betaling==="Betaald"?pill("Betaald"):b.betaling==="Voorschot"?pill("Voorschot"):""}${b.levering==="In montage"?pill("In montage","p-In-montage"):""}</div></div>
    <div class="amt">${b.video?eur(b.video):(b.gratis?"<small>gratis</small>":"–")}${b.foto?`<small>+ foto ${eur(b.foto)}</small>`:""}</div></button>`;}
 function rowQ(b,kind){const lab=kind==="lev"?"✓ Afgeleverd":kind==="conf"?"✓ Bevestigd":"✓ Betaald";return `<div class="rowq">${rowB(b,{noFlags:1})}${canWrite?`<button type="button" class="qbtn" data-q="${kind}:${b.id}">${lab}</button>`:""}</div>`}
@@ -755,6 +772,7 @@ function shootDay(b){const L=contactLinks(b.contact);const done=b.shotDone||[];c
   return `<section class="sday ${ek(b)}">
    <div class="sd-top"><span class="sd-badge">Shootdag</span><span class="sd-type">${esc(etype(b))}</span></div>
    <div class="sd-time">${esc(b.start||"–")}${b.eind?`<small> tot ${esc(b.eind)}</small>`:""}</div>
+   ${vertrek(b)?`<div class="sd-vertrek">🚗 Vertrek thuis <b>±${vertrek(b).tijd}</b> · ${durTxt(vertrek(b).drive)} rijden · om ${vertrek(b).aan} ter plaatse</div>`:""}
    <h2 class="sd-name">${esc(b.klant)}${b.event?`<small>${esc(b.event)}</small>`:""}</h2>
    <div class="sd-big">
     ${b.locatie?`<a href="https://maps.google.com/?q=${encodeURIComponent(b.locatie)}" target="_blank" rel="noopener"><b>Route</b><span>${esc(b.locatie)}</span></a>`:`<div class="sd-mute"><b>Route</b><span>Geen adres</span></div>`}
@@ -1076,7 +1094,7 @@ const FORMS={
   ["status","Status","seg",1,STAT],["categorie","Categorie","seg",1,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","pak",1],
   ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["ontvangen","Al ontvangen (€)","number"],["betaling","Betaalstatus","seg",1,["Open","Voorschot","Betaald","Te checken"]],["foto","Foto (€, telt niet mee)","number"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
   ["_","Team & levering","sec"],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["levering","Levering","seg",1,["Nog te filmen","In montage","Afgeleverd"]],["notitie","Notities (alleen voor jou)","textarea",1],
-  ["_","Meer details","more"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["fotoKost","Fotograaf krijgt (€)","number"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["montageUren","Montage-uren (jouw tijd)","number"]]},
+  ["_","Meer details","more"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["fotoKost","Fotograaf krijgt (€)","number"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["montageUren","Montage-uren (jouw tijd)","number"],["reisMinHand","Reistijd zelf invullen (min, overschrijft de berekening)","number"]]},
  team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Helper","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
  leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via","Team"]],["event","Event","text"],["datum","Gevraagde datum","date"],["start","Van","time"],["eind","Tot","time"],["locatie","Locatie","text",1],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
  tasks:{t:"Taak",f:[["titel","Taak","text",1],["deadline","Tegen","date"],["klaar","Klaar","check"],["notitie","Notitie","textarea",1]]},
@@ -1193,6 +1211,7 @@ function openBooking(id){const get=()=>S.bookings.find(x=>x.id===id);if(!get())r
      <div class="bo-facts">
       ${fact("📅",d?`<b>${cap(d.toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</b>${b.start?`<br>${esc(b.start)}${b.eind?"–"+esc(b.eind):""}`:""}`:"<b>Datum nog niet gekend</b>")}
       ${fact("📍",esc(b.locatie||""))}
+      ${fact("🚗",vertrekTxt(b)?esc(vertrekTxt(b)):(cleanAddr(b.locatie)&&b.start?(b.reisAdres===cleanAddr(b.locatie)?"Adres niet gevonden: vul het volledige adres in, of je reistijd bij Bewerk › Meer details.":"Reistijd wordt berekend…"):""))}
       ${fact("👥",(teamChips(b)?`<span class="pills" style="display:inline-flex">${teamChips(b)}</span>`:"")+(b.fotograaf?` Fotograaf: ${esc(b.fotograaf)}`:""))}
       ${fact("📞",esc(b.contact||""))}
      </div>
@@ -1501,7 +1520,7 @@ async function start(){const hq=location.hash+location.search;if(/error_code=|er
   if(!adm)return loginPage("Je bent aangemeld als "+session.user.email+", maar dit account heeft nog geen toegang. Laat Claude weten dat je account klaar is.");
   if(started)return;started=true;db=makeDb(SB);canWrite=true;UI.mode="owner";render();
   const pending=new Set(COLS);
-  const done=c=>{pending.delete(c);if(c==="bookings")autoClose();if(!pending.size&&!ready)ready=true;rerender()};
+  const done=c=>{pending.delete(c);if(c==="bookings"){autoClose();setTimeout(fillRoutes,1500)}if(!pending.size&&!ready)ready=true;rerender()};
   COLS.forEach(c=>db.collection(c).onSnapshot(s=>{S[c]=s.docs.map(x=>Object.assign({id:x.id},x.data()));done(c)},()=>done(c)));
   db.doc("settings/finance").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,s.data());rerender()},()=>{});
   db.doc("settings/feed").onSnapshot(s=>{if(s.exists)S.settings=Object.assign({},S.settings,{feedToken:s.data().token});rerender()},()=>{});
