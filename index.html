@@ -1437,8 +1437,11 @@ function loginPage(msg){$("#nav").hidden=true;$("#fab").hidden=true;document.que
    <form class="entry" id="loginform"><h2 style="font-size:24px;margin-bottom:6px">Aanmelden</h2><p class="note" style="margin-top:0">Alleen voor Hatice.</p>
    <div class="f" style="margin-top:14px"><label for="l-mail">E-mail</label><input id="l-mail" type="email" autocomplete="username" required></div>
    <div class="f" style="margin-top:10px"><label for="l-pw">Wachtwoord</label><input id="l-pw" type="password" autocomplete="current-password" required minlength="8"></div>
-   <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" name="mode" value="in">Aanmelden</button><button class="btn ghost" name="mode" value="up">Account aanmaken</button></div>
+   <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" name="mode" value="in">Aanmelden</button><button class="btn ghost" type="button" id="l-forgot">Wachtwoord vergeten?</button></div>
    ${msg?`<p class="note" style="color:var(--warn)">${esc(msg)}</p>`:""}</form></div>`;
+  $("#l-forgot").addEventListener("click",async()=>{const email=$("#l-mail").value.trim();if(!email){$("#l-mail").focus();return loginPage("Vul eerst je e-mailadres in en tik dan opnieuw op 'Wachtwoord vergeten?'.")}
+    const {error}=await SB.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    loginPage(error?(/rate/i.test(error.message)?"Even wachten: er is net al een mail verstuurd. Probeer over een paar minuten opnieuw.":error.message):"Check je mailbox ("+email+"). Klik op de link in de mail van Supabase en kies daar een nieuw wachtwoord.")});
   const f=$("#loginform");f.addEventListener("submit",async e=>{e.preventDefault();const mode=e.submitter&&e.submitter.value;const email=$("#l-mail").value.trim(),password=$("#l-pw").value;
     if(mode==="up"){const {error}=await SB.auth.signUp({email,password});return loginPage(error?error.message:"Account aangemaakt. Bevestig je e-mailadres via de mail van Supabase en meld je daarna hier aan. Laat Claude dan weten dat je account klaar is.")}
     const {error}=await SB.auth.signInWithPassword({email,password});if(error)return loginPage(error.message==="Invalid login credentials"?"E-mail of wachtwoord klopt niet.":error.message);start()})}
@@ -1476,7 +1479,17 @@ function autoClose(){(S.bookings||[]).forEach(b=>{const dt=daysTo(b.datum);if(dt
   const st=u.status||b.status;
   if(st==="Afgerond"){if(b.levering==="Nog te filmen"||!b.levering)u.levering=dt<-21?"Afgeleverd":"In montage";else if(b.levering==="In montage"&&dt<-21)u.levering="Afgeleverd"}
   if(Object.keys(u).length)db.doc("bookings/"+b.id).update(u).catch(()=>{})})}
-async function start(){const {data:{session}}=await SB.auth.getSession();if(!session)return loginPage();
+function newPwPage(msg){$("#nav").hidden=true;$("#fab").hidden=true;document.querySelector(".app").style.gridTemplateColumns="1fr";
+  $("#main").innerHTML=`<div class="crew-wrap" style="max-width:420px;padding-top:6vh"><div class="crew-top"><span class="logo">PRIMEMOMENTS<i></i></span><span class="eyebrow" style="margin:0">Headquarter</span></div>
+   <form class="entry" id="pwform"><h2 style="font-size:24px;margin-bottom:6px">Nieuw wachtwoord</h2><p class="note" style="margin-top:0">Kies een nieuw wachtwoord van minstens 8 tekens.</p>
+   <div class="f" style="margin-top:14px"><label for="n-pw">Nieuw wachtwoord</label><input id="n-pw" type="password" autocomplete="new-password" required minlength="8"></div>
+   <div class="f" style="margin-top:10px"><label for="n-pw2">Nog eens</label><input id="n-pw2" type="password" autocomplete="new-password" required minlength="8"></div>
+   <div style="margin-top:16px"><button class="btn">Bewaar en ga naar je HQ</button></div>${msg?`<p class="note" style="color:var(--warn)">${esc(msg)}</p>`:""}</form></div>`;
+  $("#pwform").addEventListener("submit",async e=>{e.preventDefault();const a=$("#n-pw").value,b=$("#n-pw2").value;if(a!==b)return newPwPage("De twee wachtwoorden zijn niet gelijk.");
+    const {error}=await SB.auth.updateUser({password:a});if(error)return newPwPage(error.message);history.replaceState(null,"",location.pathname);toast("Nieuw wachtwoord bewaard");start()})}
+let recovering=/type=recovery/.test(location.hash);
+SB.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovering=true;newPwPage()}});
+async function start(){const {data:{session}}=await SB.auth.getSession();if(recovering)return session?newPwPage():loginPage("De link is verlopen. Vraag een nieuwe mail aan.");if(!session)return loginPage();
   const {data:adm}=await SB.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
   if(!adm)return loginPage("Je bent aangemeld als "+session.user.email+", maar dit account heeft nog geen toegang. Laat Claude weten dat je account klaar is.");
   if(started)return;started=true;db=makeDb(SB);canWrite=true;UI.mode="owner";render();
