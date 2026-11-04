@@ -296,8 +296,9 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .list>.rowq:first-child{border-top:0}.rowq .row{border-top:0}
 .qbtn{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 11px;margin-right:12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;color:var(--ok)}
 .qbtn:disabled{opacity:.5}
+@media (max-width:640px){.vmini{grid-template-columns:1fr 1fr}}
 @media (max-width:640px){.rowq{grid-template-columns:1fr}.rowq .qbtn{justify-self:end;margin:-6px 14px 12px 0}}
-.vmini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 22px}
+.vmini{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 22px}
 .vmini a{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;text-decoration:none;color:var(--fg)}
 .vmini span{font-size:11.5px;color:var(--muted)}.vmini b{font-family:var(--display);font-size:20px;font-weight:600}.vmini a.bad b{color:var(--bad)}
 .qseg{flex-wrap:wrap;margin:0}
@@ -526,7 +527,7 @@ V.vandaag=()=>{
   return imp+teamNews()+todayB.map(shootDay).join("")+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
   ${nx&&!todayB.includes(nx)?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
    <div><div class="lbl">Volgende shoot · ${new Date(pd(nx.datum)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?(nx.eind?nx.start+"–"+nx.eind:nx.start):"",nx.locatie||"",nx.fotograaf?"Fotograaf: "+nx.fotograaf:""].filter(Boolean).map(esc).join(" · ")||"Details aanvullen"}</div></div></button>`:""}
-  <div class="vmini"><a href="#kpi"><span>Nog te ontvangen</span><b>${eur(ontv)}</b></a><a href="#aanvragen"><span>Aanvragen</span><b>${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</b></a><a href="#facturen"${vervallen.length?' class="bad"':""}><span>Open facturen</span><b>${openInv.length}</b></a></div>
+  <div class="vmini"><a href="#kpi"><span>Nog te ontvangen</span><b>${eur(ontv)}</b></a><a href="#aanvragen"><span>Als reservaties doorgaan</span><b>+ ${eur(reservaties().reduce((x,b)=>x+(+b.video||0),0))}</b></a><a href="#aanvragen"><span>Aanvragen</span><b>${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</b></a><a href="#facturen"${vervallen.length?' class="bad"':""}><span>Open facturen</span><b>${openInv.length}</b></a></div>
   <div class="cols"><div>
    ${(()=>{const wk=up.filter(b=>daysTo(b.datum)<=7&&b!==nx);const L=wk.length?wk:up.filter(b=>b!==nx).slice(0,3);return `<section class="block"><h2>${wk.length?"Deze week":"Daarna"} <span class="meta"><a href="#agenda">agenda</a></span></h2>${L.length?`<div class="list">${L.map(b=>rowB(b)).join("")}</div>`:`<div class="empty">Niets gepland.</div>`}</section>`})()}
    ${(()=>{const inn=sorted(B.filter(b=>daysTo(b.datum)!==null&&daysTo(b.datum)<=0&&toReceive(b)>0));return inn.length?`<section class="block"><h2>Nog te innen <span class="meta">${eur(inn.reduce((a,b)=>a+toReceive(b),0))}</span></h2><div class="list">${inn.map(b=>rowQ(b,"pay")).join("")}</div></section>`:""})()}
