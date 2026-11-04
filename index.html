@@ -1489,7 +1489,8 @@ function newPwPage(msg){$("#nav").hidden=true;$("#fab").hidden=true;document.que
     const {error}=await SB.auth.updateUser({password:a});if(error)return newPwPage(error.message);history.replaceState(null,"",location.pathname);toast("Nieuw wachtwoord bewaard");start()})}
 let recovering=/type=recovery/.test(location.hash);
 SB.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovering=true;newPwPage()}});
-async function start(){const {data:{session}}=await SB.auth.getSession();if(recovering)return session?newPwPage():loginPage("De link is verlopen. Vraag een nieuwe mail aan.");if(!session)return loginPage();
+async function start(){const hq=location.hash+location.search;if(/error_code=|error=access_denied/.test(hq)){history.replaceState(null,"",location.pathname);return loginPage("Deze resetlink is verlopen of al gebruikt. Tik op 'Wachtwoord vergeten?' voor een nieuwe mail en klik op de nieuwste link.")}
+  const {data:{session}}=await SB.auth.getSession();if(recovering)return session?newPwPage():loginPage("De link is verlopen. Vraag een nieuwe mail aan.");if(!session)return loginPage();
   const {data:adm}=await SB.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
   if(!adm)return loginPage("Je bent aangemeld als "+session.user.email+", maar dit account heeft nog geen toegang. Laat Claude weten dat je account klaar is.");
   if(started)return;started=true;db=makeDb(SB);canWrite=true;UI.mode="owner";render();
