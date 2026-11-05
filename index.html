@@ -365,6 +365,8 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .kasbox{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 22px}@media (max-width:640px){.kasbox{grid-template-columns:1fr}}
 .kasbox>div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column}
 .kasbox span{font-size:12px;color:var(--muted)}.kasbox b{font-family:var(--display);font-size:24px;font-weight:600}.kasbox .bad b{color:var(--bad)}.kasbox .ok b{color:var(--ok)}
+.bo-mont{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.bo-mont b{font-family:var(--display);font-size:20px}.bo-mont small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -1037,6 +1039,35 @@ V.prive=()=>{const loon=+S.settings.loon||0;const yNow=now().getFullYear();const
 document.addEventListener("click",e=>{const y=e.target.closest("[data-pyear]");if(y){UI.pYear=y.dataset.pyear;return render()}
   if(e.target.closest("[data-loon]")){const {sc,close}=openSheet(`<form><h3>Maandloon</h3><div class="f"><label for="f-loon">Wat verdien je per maand met je vaste job? (€)</label><input id="f-loon" type="number" inputmode="decimal" value="${esc(S.settings.loon||"")}"></div><p class="note">Alleen zichtbaar voor jou in je HQ. Je team ziet dit nooit.</p><div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button><button class="btn">Bewaar</button></div></div></form>`);
     sc.querySelector("form").addEventListener("submit",async ev=>{ev.preventDefault();const g=+sc.querySelector("#f-loon").value||0;try{await db.doc("settings/finance").update({loon:g});S.settings.loon=g;toast("Bewaard");close();render()}catch(_){toast("Bewaren mislukt")}})}});
+/* ================= montage & uurloon ================= */
+const shootH=b=>{const s=tmin(b.start),e=tmin(b.eind);if(s===null||e===null)return null;let d=e-s;if(d<=0)d+=1440;return Math.round(d/6)/10};
+function montBlock(){const F=S.bookings.filter(b=>+b.montageUren>0&&b.status!=="Geannuleerd");
+  if(!F.length)return `<section class="block"><h2>Montage & uurloon</h2><div class="empty">Nog geen montage-uren. Stuur me na elke sessie je uren, of vul ze in bij de boeking.</div></section>`;
+  const rows=F.map(b=>{const m=+b.montageUren,sh=shootH(b)||0,p=vid(b);return{b,m,sh,p,t:etype(b),eu:p&&(m+sh)?p/(m+sh):null,em:p&&m?p/m:null}}).sort((a,b)=>(b.b.datum||"").localeCompare(a.b.datum||""));
+  const tm=rows.reduce((a,r)=>a+r.m,0),ts=rows.reduce((a,r)=>a+r.sh,0),tp=rows.reduce((a,r)=>a+r.p,0);
+  const by={};rows.forEach(r=>{const o=by[r.t]=by[r.t]||{n:0,m:0,sh:0,p:0};o.n++;o.m+=r.m;o.sh+=r.sh;o.p+=r.p});
+  const avgM=tm/rows.length;
+  return `<section class="block"><h2>Montage & uurloon <span class="meta">${rows.length} film${rows.length>1?"s":""} bijgehouden</span></h2>
+   <div class="kgrid">
+    <div class="tile dark"><div class="k">Gemiddeld uurloon</div><div class="v">${eur(tp/Math.max(1,tm+ts))}</div><div class="s">per uur filmen + monteren</div></div>
+    <div class="tile"><div class="k">Montage per film</div><div class="v">${Math.round(avgM*10)/10} u</div><div class="s">gemiddeld</div></div>
+    <div class="tile"><div class="k">Totaal gemonteerd</div><div class="v">${Math.round(tm)} u</div><div class="s">+ ${Math.round(ts)} u gefilmd</div></div>
+    <div class="tile"><div class="k">Montage vs filmen</div><div class="v">${ts?Math.round(tm/ts*10)/10+"×":"–"}</div><div class="s">uren montage per uur film</div></div>
+   </div>
+   <div class="tbl-wrap"><table class="tbl" style="min-width:520px"><thead><tr><th style="text-align:left">Type</th><th>Films</th><th>Gem. montage</th><th>Gem. gefilmd</th><th>Gem. prijs</th><th>€/uur</th></tr></thead><tbody>
+    ${Object.entries(by).map(([t,o])=>`<tr><td style="text-align:left">${esc(t)}</td><td>${o.n}</td><td>${Math.round(o.m/o.n*10)/10} u</td><td>${o.sh?Math.round(o.sh/o.n*10)/10+" u":"–"}</td><td>${eur(o.p/o.n)}</td><td><b>${eur(o.p/Math.max(1,o.m+o.sh))}</b></td></tr>`).join("")}
+   </tbody></table></div>
+   <div class="list" style="margin-top:12px">${rows.map(r=>`<button class="row two" data-edit="bookings:${r.b.id}"><div class="main-t"><div class="t">${esc(r.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(r.t)}</span></div><div class="d">${r.sh?r.sh+" u gefilmd · ":""}${r.m} u montage${(r.b.montageLog||[]).length?" · "+r.b.montageLog.length+" sessies":""}</div></div><div class="amt">${r.eu?eur(r.eu)+"<small>/uur</small>":"–"}</div></button>`).join("")}</div>
+   <p class="note">Uurloon = videoprijs gedeeld door (uren filmen + uren monteren), vóór kosten, team en belastingen. Hoe meer films je bijhoudt, hoe beter je ziet welk type event het best betaalt.</p></section>`}
+function addSession(id){const b=S.bookings.find(x=>x.id===id);if(!b)return;
+  const {sc,close}=openSheet(`<form><h3>Montagesessie</h3><p class="sub">${esc(b.klant)}</p><div class="fgrid"><div class="f"><label for="ms-d">Datum</label><input id="ms-d" type="date" value="${iso(now())}"></div><div class="f"><label for="ms-h">Uren</label><input id="ms-h" type="number" inputmode="decimal" step="0.5" min="0.5" placeholder="bv. 5"></div>
+   <div class="f full check"><input type="checkbox" id="ms-k"><label for="ms-k">Film is klaar (zet op Afgeleverd)</label></div></div>
+   <div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button><button class="btn">Bewaar</button></div></div></form>`);
+  sc.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const h=+sc.querySelector("#ms-h").value;if(!h){toast("Vul het aantal uren in");return}
+    const u={montageUren:Math.round(((+b.montageUren||0)+h)*10)/10,montageLog:[...(b.montageLog||[]),{datum:sc.querySelector("#ms-d").value,uren:h}]};
+    if(sc.querySelector("#ms-k").checked){u.levering="Afgeleverd";if(b.status==="Bevestigd")u.status="Afgerond"}else if(b.levering==="Nog te filmen"&&daysTo(b.datum)<=0)u.levering="In montage";
+    if(await save("bookings",id,u))close()})}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-msess]");if(t){e.stopPropagation();addSession(t.dataset.msess)}},true);
 function monthsAhead(n){const r=[];const d=new Date(now().getFullYear(),now().getMonth(),1);for(let i=0;i<n;i++){r.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);d.setMonth(d.getMonth()+1)}return r}
 V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Set(S.bookings.map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
   const td=iso(now());const all=S.bookings.filter(b=>b.status!=="Geannuleerd");
@@ -1089,6 +1120,7 @@ V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Se
    <div class="chart"><div class="bars">${fc.map(x=>{const t=x.c+x.r+x.rec;return `<div class="bar" style="cursor:default"><span class="val">${t?eur(t).replace("€ ","€"):""}</span>${x.r?`<span class="seg r" style="height:${x.r/fmx*150}px"></span>`:""}${x.rec?`<span class="seg" style="height:${x.rec/fmx*150}px;background:var(--info)"></span>`:""}${x.c?`<span class="seg c" style="height:${x.c/fmx*150}px"></span>`:""}</div>`}).join("")}</div><div class="mlabels">${fc.map(x=>`<span>${MAAND[+x.k.slice(5,7)-1]}</span>`).join("")}</div></div>
    <div class="legend"><span><i style="background:var(--accent)"></i>Bevestigd</span><span><i style="background:color-mix(in srgb,var(--warn) 50%,var(--surface))"></i>Gereserveerd (telt voor 50%)</span><span><i style="background:var(--info)"></i>Vaste klanten</span></div></section>
   ${fcBlock()}
+  ${montBlock()}
   <div class="cols"><div>
    <section class="block"><h2>Per type event <span class="meta">${yr==="alles"?"alles":yr}</span></h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Type</th><th>Shoots</th><th>Omzet</th><th>Gem.</th><th>€/uur</th></tr></thead><tbody>${Object.entries(typ).sort((a,b)=>b[1].omz-a[1].omz).map(([t,o])=>`<tr><td>${esc(t)}</td><td>${o.n}</td><td>${eur(o.omz)}</td><td>${eur(o.omz/Math.max(1,o.n))}</td><td>${o.h?eur(o.hv/o.h):"–"}</td></tr>`).join("")}</tbody></table></div></section>
    <section class="block"><h2>Waar je klanten vandaan komen</h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Kanaal</th><th>Boekingen</th><th>Omzet</th><th>Aanvragen</th><th>Omgezet</th></tr></thead><tbody>${[...new Set([...Object.keys(srcB),...Object.keys(srcL)])].sort((a,b)=>((srcB[b]||{}).omz||0)-((srcB[a]||{}).omz||0)).map(k=>{const b=srcB[k]||{n:0,omz:0},l=srcL[k]||{a:0,g:0,v:0};return `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${eur(b.omz)}</td><td>${l.a}</td><td>${l.g+l.v?Math.round(l.g/(l.g+l.v)*100)+"%":"–"}</td></tr>`}).join("")}</tbody></table></div>
@@ -1259,6 +1291,7 @@ function openBooking(id){const get=()=>S.bookings.find(x=>x.id===id);if(!get())r
      <div class="bo-sec">Betaling</div>${segRow("betaling",["Open","Voorschot","Betaald"],b.betaling)}
      <div class="bo-sec">Levering</div>${segRow("levering",["Nog te filmen","In montage","Afgeleverd"],b.levering)}
      <div class="bo-money">${b.gratis?`<div><span>Prijs</span><b>Gratis</b></div>`:`<div><span>Prijs video</span><b>${tot?eur(tot):"–"}</b></div><div><span>Ontvangen</span><b>${eur(b.betaling==="Betaald"?tot:ont)}</b></div><div><span>Nog open</span><b${open?' style="color:var(--warn)"':""}>${eur(open)}</b></div>`}${b.foto?`<div><span>Foto (apart)</span><b>${eur(b.foto)}</b></div>`:""}</div>
+     ${daysTo(b.datum)!==null&&daysTo(b.datum)<=0&&b.status!=="Geannuleerd"?`<div class="bo-sec">Montage</div><div class="bo-mont"><div><b>${+b.montageUren||0} u</b>${(b.montageLog||[]).length?`<small>${b.montageLog.map(x=>dShort(x.datum).slice(0,5)+": "+x.uren+" u").join(" · ")}</small>`:""}</div>${canWrite?`<button type="button" class="btn ghost" data-msess="${b.id}">+ Sessie</button>`:""}</div>`:""}
      <div class="bo-qa">${canWrite?`<button type="button" class="btn ghost" data-binv="v">Voorschotfactuur</button><button type="button" class="btn ghost" data-binv="e">Eindfactuur</button>`:""}</div>
      ${invs.length?`<div class="list" style="margin-top:10px">${invs.map(rowInv).join("")}</div>`:""}
      ${b.teamNotitie?`<div class="bo-sec">Voor het team</div><p class="bo-note">${esc(b.teamNotitie)}</p>`:""}
