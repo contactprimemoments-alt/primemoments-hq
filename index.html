@@ -349,7 +349,7 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .sd-mem{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;padding:8px 12px;text-decoration:none;color:var(--fg);background:var(--bg);min-width:72px}
 .sd-mem b{font-size:15px}.sd-mem span{font-size:12px;color:var(--muted)}
 .sd-note{margin-top:12px;background:var(--bg);border-radius:14px;padding:12px 14px;font-size:14.5px;white-space:pre-wrap}.sd-note p{margin:0}.sd-note p+p{margin-top:8px}.sd-note .mine{color:var(--muted);font-size:13.5px}
-.sd-shots{margin-top:14px}.sd-shots summary{cursor:pointer;font-family:var(--display);font-size:19px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px}.sd-shots summary span{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400}
+.sd-log{margin-top:14px}.sd-lh{font-family:var(--display);font-size:19px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:4px 0 8px}.sd-lh span{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400}.sd-t{font-variant-numeric:tabular-nums;color:var(--k);font-size:13px;flex:none}.sd-x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px}.sd-hint{color:var(--muted);font-size:13px;margin:8px 0 0}.sd-log .sd-add{margin:0 0 6px}.sd-log .sd-it{cursor:default}.sd-shots{margin-top:14px}.sd-shots summary{cursor:pointer;font-family:var(--display);font-size:19px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px}.sd-shots summary span{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400}
 .sd-list{display:grid;gap:2px}
 .sd-it{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
 .sd-it input{width:24px;height:24px;flex:none;accent-color:var(--k)}
@@ -819,7 +819,7 @@ const SHOT={
  ov:["Aankomst en sfeer","Decor en details","Hoofdmomenten","Koppel / hoofdpersonen","Familie en vrienden","Drone (als het weer het toelaat)"]};
 const shotsFor=b=>(SHOT[ETSLUG[etype(b)]]||SHOT.ov).concat(b.shotExtra||[]);
 function telLink(c){return contactLinks(c)}
-function shootDay(b){const L=contactLinks(b.contact);const done=b.shotDone||[];const sh=shotsFor(b);const n=sh.filter(x=>done.includes(x)).length;
+function shootDay(b){const L=contactLinks(b.contact);
   const team=(b.team||[]).map(id=>S.team.find(m=>m.id===id)).filter(Boolean);
   return `<section class="sday ${ek(b)}">
    <div class="sd-top"><span class="sd-badge">Shootdag</span><span class="sd-type">${esc(etype(b))}</span></div>
@@ -832,16 +832,17 @@ function shootDay(b){const L=contactLinks(b.contact);const done=b.shotDone||[];c
    </div>
    ${team.length||b.fotograaf?`<div class="sd-team">${team.map(m=>{const T=contactLinks(m.contact);return `<a ${T.tel?`href="${T.tel}"`:""} class="sd-mem"><b>${esc(m.code||m.naam)}</b><span>${esc((m.naam||"").split(" ")[0])}${T.tel?" · bel":""}</span></a>`}).join("")}${b.fotograaf?`<div class="sd-mem"><b>Foto</b><span>${esc(b.fotograaf)}</span></div>`:""}</div>`:""}
    ${b.teamNotitie||b.notitie?`<div class="sd-note">${b.teamNotitie?`<p>${esc(b.teamNotitie)}</p>`:""}${b.notitie?`<p class="mine">${esc(b.notitie)}</p>`:""}</div>`:""}
-   <details class="sd-shots" open><summary>Shotlist <span>${n}/${sh.length}</span></summary>
-    <div class="sd-list">${sh.map(x=>`<label class="sd-it"><input type="checkbox" data-shot="${b.id}" value="${esc(x)}" ${done.includes(x)?"checked":""}><span>${esc(x)}</span></label>`).join("")}</div>
-    ${canWrite?`<form class="sd-add" data-shotadd="${b.id}"><input placeholder="Eigen shot toevoegen…" aria-label="Eigen shot toevoegen"><button class="btn sm">+</button></form>`:""}
-   </details>
+   <div class="sd-log"><div class="sd-lh">Tijdens de shoot <span>${(b.shootLog||[]).length||""}</span></div>
+    ${canWrite?`<form class="sd-add" data-logadd="${b.id}"><input placeholder="Wat gebeurt er? bv. oma huilt bij de ringen" aria-label="Notitie tijdens de shoot" enterkeyhint="done" autocomplete="off"><button class="btn sm" aria-label="Bewaar">+</button></form>`:""}
+    ${(b.shootLog||[]).length?`<div class="sd-list">${[...b.shootLog].map((l,i)=>({...l,i})).reverse().map(l=>`<div class="sd-it"><b class="sd-t">${esc(l.t)}</b><span>${esc(l.x)}</span>${canWrite?`<button type="button" class="sd-x" data-logdel="${b.id}:${l.i}" aria-label="Verwijder">×</button>`:""}</div>`).join("")}</div>`:`<p class="sd-hint">Tik iets in als er iets gebeurt of gezegd wordt. Het uur komt er automatisch bij.</p>`}
+   </div>
    <button type="button" class="btn ghost sd-open" data-edit="bookings:${b.id}">Alle details</button>
   </section>`}
-document.addEventListener("change",async e=>{const c=e.target.closest("[data-shot]");if(!c||!canWrite)return;const b=S.bookings.find(x=>x.id===c.dataset.shot);if(!b)return;
-  const set=new Set(b.shotDone||[]);c.checked?set.add(c.value):set.delete(c.value);try{await db.doc("bookings/"+b.id).update({shotDone:[...set]})}catch(err){toast("Bewaren mislukt")}});
-document.addEventListener("submit",async e=>{const f=e.target.closest("[data-shotadd]");if(!f)return;e.preventDefault();const v=f.querySelector("input").value.trim();if(!v)return;
-  const b=S.bookings.find(x=>x.id===f.dataset.shotadd);if(!b)return;await db.doc("bookings/"+b.id).update({shotExtra:[...(b.shotExtra||[]),v]}).catch(()=>toast("Bewaren mislukt"))});
+document.addEventListener("submit",async e=>{const f=e.target.closest("[data-logadd]");if(!f)return;e.preventDefault();const inp=f.querySelector("input");const v=inp.value.trim();if(!v)return;
+  const b=S.bookings.find(x=>x.id===f.dataset.logadd);if(!b)return;const d=new Date();const t=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  inp.value="";try{await db.doc("bookings/"+b.id).update({shootLog:[...(b.shootLog||[]),{t,x:v}]})}catch(err){inp.value=v;toast("Bewaren mislukt")}});
+document.addEventListener("click",async e=>{const x=e.target.closest("[data-logdel]");if(!x)return;const [id,i]=x.dataset.logdel.split(":");const b=S.bookings.find(o=>o.id===id);if(!b)return;
+  const L=[...(b.shootLog||[])];L.splice(+i,1);await db.doc("bookings/"+b.id).update({shootLog:L}).catch(()=>toast("Bewaren mislukt"))});
 function teamPayBlock(){const P=(S.kas||[]).filter(k=>k.soort==="Uit"&&k.wie&&!/privé|prive|mama|papa/i.test(k.wie));
   if(!P.length)return "";const by={};P.forEach(k=>{const n=k.wie.split(/[ (]/)[0];const o=by[n]=by[n]||{n,tot:0,items:[],ext:/extern/i.test(k.wie)};o.tot+=+k.bedrag||0;o.items.push(k)});
   const L=Object.values(by).sort((a,b)=>b.tot-a.tot);const tot=L.reduce((a,o)=>a+o.tot,0);
@@ -1368,7 +1369,7 @@ function openBooking(id){const get=()=>S.bookings.find(x=>x.id===id);if(!get())r
      ${daysTo(b.datum)!==null&&daysTo(b.datum)<=0&&b.status!=="Geannuleerd"?`<div class="bo-sec">Montage</div><div class="bo-mont"><div><b>${+b.montageUren||0} u</b>${(b.montageLog||[]).length?`<small>${b.montageLog.map(x=>dShort(x.datum).slice(0,5)+": "+x.uren+" u").join(" · ")}</small>`:""}</div>${canWrite?`<button type="button" class="btn ghost" data-msess="${b.id}">+ Sessie</button>`:""}</div>`:""}
      <div class="bo-qa">${canWrite?`<button type="button" class="btn ghost" data-binv="v">Voorschotfactuur</button><button type="button" class="btn ghost" data-binv="e">Eindfactuur</button>`:""}</div>
      ${invs.length?`<div class="list" style="margin-top:10px">${invs.map(rowInv).join("")}</div>`:""}
-     ${b.teamNotitie?`<div class="bo-sec">Voor het team</div><p class="bo-note">${esc(b.teamNotitie)}</p>`:""}
+     ${b.teamNotitie?`<div class="bo-sec">Voor het team</div><p class="bo-note">${esc(b.teamNotitie)}</p>`:""}${(b.shootLog||[]).length?`<div class="bo-sec">Tijdens de shoot</div><p class="bo-note">${b.shootLog.map(l=>`<b>${esc(l.t)}</b> ${esc(l.x)}`).join("<br>")}</p>`:""}
      ${b.notitie?`<div class="bo-sec">Notities</div><p class="bo-note">${esc(b.notitie)}</p>`:""}
      <details class="hist"><summary style="cursor:pointer;font-size:13px;color:var(--muted);margin-top:14px">Historiek</summary><div data-histbox>Laden…</div></details>
      <div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Sluit</button>${canWrite?`<button type="button" class="btn" data-bedit>Bewerk</button>`:""}</div></div></div>`};
