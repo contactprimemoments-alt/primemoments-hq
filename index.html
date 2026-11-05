@@ -558,7 +558,7 @@ V.vandaag=()=>{
   const nxDays=nx?daysTo(nx.datum):null;
   const imp=!S.bookings.length&&!S.invoices.length?`<div class="entry" style="margin-bottom:22px"><h2 style="font-size:20px">Je gegevens importeren</h2><p class="note">Je HQ is nog leeg. Kies het bestand <b>PrimeMoments_HQ_gegevens.json</b> dat je van Claude kreeg. Dat moet maar één keer.</p><input type="file" id="importfile" accept=".json,application/json" style="font-family:var(--body);font-size:14px;text-transform:none;letter-spacing:0"></div>`:"";
   const todayB=sorted(B.filter(b=>daysTo(b.datum)===0&&b.status!=="Geannuleerd"),"start");
-  return imp+teamNews()+todayB.map(shootDay).join("")+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
+  return imp+teamNews()+montWarnBanner()+todayB.map(shootDay).join("")+`<div class="ph"><div><div class="eyebrow">${new Date().toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><h1>${groet}, Hatice</h1></div><div class="acts"><button class="btn" data-act="new">+ Nieuw</button></div></div>
   ${nx&&!todayB.includes(nx)?`<button class="next" data-edit="bookings:${nx.id}"><div class="big">${nxDays===0?"Vandaag":nxDays}${nxDays===0?"":`<small>${nxDays===1?"dag":"dagen"}</small>`}</div>
    <div><div class="lbl">Volgende shoot · ${new Date(pd(nx.datum)).toLocaleDateString("nl-BE",{weekday:"long",day:"numeric",month:"long"})}</div><div class="ttl">${esc(nx.klant)}${nx.event?" · "+esc(nx.event):""}</div><div class="sub">${[nx.start?(nx.eind?nx.start+"–"+nx.eind:nx.start):"",nx.locatie||"",nx.fotograaf?"Fotograaf: "+nx.fotograaf:""].filter(Boolean).map(esc).join(" · ")||"Details aanvullen"}</div></div></button>`:""}
   <div class="vmini"><a href="#kpi"><span>Nog te ontvangen</span><b>${eur(ontv)}</b></a><a href="#aanvragen"><span>Als reservaties doorgaan</span><b>+ ${eur(reservaties().reduce((x,b)=>x+(+b.video||0),0))}</b></a><a href="#aanvragen"><span>Aanvragen</span><b>${S.leads.filter(l=>!["Geboekt","Verloren"].includes(l.status)).length}</b></a><a href="#facturen"${vervallen.length?' class="bad"':""}><span>Open facturen</span><b>${openInv.length}</b></a></div>
@@ -1061,7 +1061,9 @@ document.addEventListener("click",e=>{const y=e.target.closest("[data-pyear]");i
 const shootH=b=>{const s=tmin(b.start),e=tmin(b.eind);if(s===null||e===null)return null;let d=e-s;if(d<=0)d+=1440;return Math.round(d/6)/10};
 const filmH=b=>shootH(b)||(+b.filmUren||0);
 const teamPaid=b=>{if(b.teamKost!=null&&b.teamKost!=="")return +b.teamKost||0;return (S.kas||[]).filter(k=>k.soort==="Uit"&&k.boeking===b.id).reduce((a,k)=>a+(+k.bedrag||0),0)};
-function earn(b){const p=vid(b),t=teamPaid(b),f=filmH(b),m=+b.montageUren||0,h=f+m,net=p-t;return{p,t,f,m,h,net,ph:p&&h?net/h:null,complete:!!(p&&f&&m)}}
+const rijMin=b=>b.reisMinHand!=null&&b.reisMinHand!==""?+b.reisMinHand:(b.reisMin!=null&&(!b.reisAdres||b.reisAdres===cleanAddr(b.locatie))?Math.round(b.reisMin*1.15):null);
+const rijH=b=>{const m=rijMin(b);return m?Math.round(m*2/6)/10:0};
+function earn(b){const p=vid(b),t=teamPaid(b),f=filmH(b),m=+b.montageUren||0,r=rijH(b),h=f+m+r,net=p-t;return{p,t,f,m,r,h,net,ph:p&&h?net/h:null,complete:!!(p&&f&&m),noRit:rijMin(b)==null}}
 const earnRank=()=>S.bookings.filter(b=>b.status!=="Geannuleerd").map(b=>({b,e:earn(b)})).filter(x=>x.e.complete).sort((a,c)=>c.e.ph-a.e.ph);
 const rnd1=n=>Math.round(n*10)/10;
 function earnBox(b){const e=earn(b);if(!e.p||daysTo(b.datum)===null||daysTo(b.datum)>0)return "";
@@ -1069,16 +1071,55 @@ function earnBox(b){const e=earn(b);if(!e.p||daysTo(b.datum)===null||daysTo(b.da
   const miss=[!e.f?"uren gefilmd":"",!e.m?"montage-uren":""].filter(Boolean);
   const rk=e.complete?(pos===0?`🏆 Je beste uurloon tot nu toe (van ${L.length})`:`Plaats ${pos+1} van ${L.length} · record: ${esc(best.b.klant)} ${eur(best.e.ph)}/u`):"";
   return `<div class="earn"><div class="earn-top"><div class="big">${e.ph!=null?eur(e.ph)+"<small>/u</small>":"–"}</div><div><div class="lbl">Jij verdiende netto per uur</div><div class="rk">${rk||"Nog niet volledig: vul "+miss.join(" en ")+" in"}</div></div></div>
-   <div class="earn-sum"><div><span>Prijs video</span><b>${eur(e.p)}</b></div><div><span>Team kreeg</span><b>${e.t?"− "+eur(e.t):"€ 0"}</b></div><div><span>Netto voor jou</span><b>${eur(e.net)}</b></div><div><span>Jouw uren</span><b>${rnd1(e.h)} u</b><span>${rnd1(e.f)} film + ${rnd1(e.m)} montage</span></div></div></div>`}
+   <div class="earn-sum"><div><span>Prijs video</span><b>${eur(e.p)}</b></div><div><span>Team kreeg</span><b>${e.t?"− "+eur(e.t):"€ 0"}</b></div><div><span>Netto voor jou</span><b>${eur(e.net)}</b></div><div><span>Jouw uren</span><b>${rnd1(e.h)} u</b><span>${rnd1(e.f)} film + ${rnd1(e.m)} montage + ${rnd1(e.r)} rijden</span></div></div>${e.complete&&e.noRit?`<div class="earn-miss">Reistijd onbekend: vul de locatie in, of bij Bewerk › Meer details de reistijd (enkele rit).</div>`:""}</div>`}
+/* ---- montage-planning ---- */
+function montRatio(){const L=S.bookings.filter(b=>+b.montageUren>0&&filmH(b)>0);const f=L.reduce((a,b)=>a+filmH(b),0),m=L.reduce((a,b)=>a+(+b.montageUren),0);return f?m/f:2.8}
+const montCap=()=>+S.settings.montageCap||15;
+const montNeed=b=>{if(+b.montageUren>0&&b.levering==="Afgeleverd")return 0;const est=(filmH(b)||6)*montRatio();return Math.max(0,est-(+b.montageUren||0))};
+const wkStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+function montPlan(nW=8){const cap=montCap(),w0=wkStart(now()),W=[];for(let i=0;i<nW;i++){const s=new Date(w0);s.setDate(s.getDate()+7*i);W.push({s,need:0,films:[]})}
+  // backlog: shoots done but not delivered -> this week
+  S.bookings.filter(b=>b.status!=="Geannuleerd"&&vid(b)&&b.levering!=="Afgeleverd"&&daysTo(b.datum)!==null).forEach(b=>{const d=pd(b.datum);let i=Math.floor((wkStart(d)-w0)/6048e5)+1;if(daysTo(b.datum)<0)i=Math.max(0,i);if(i<0)i=0;if(i>=nW)return;const n=montNeed(b);if(!n)return;W[i].need+=n;W[i].films.push(b)});
+  W.forEach(w=>{w.over=w.need-cap});return{W,cap}}
+function montWarnBanner(){const {W,cap}=montPlan(6);const bad=W.filter(w=>w.over>2);if(!bad.length)return "";const w=bad[0];
+  return `<a class="prio" href="#kpi" style="text-decoration:none"><span><b>Montage loopt vast in de week van ${w.s.getDate()} ${MAAND[w.s.getMonth()]}</b><br><span>± ${Math.round(w.need)} u montage nodig, jij hebt er ± ${cap} · ${w.films.length} film${w.films.length>1?"s":""}${bad.length>1?` · nog ${bad.length-1} drukke ${bad.length>2?"weken":"week"}`:""}</span></span></a>`}
+function montPlanBlock(){const {W,cap}=montPlan(8);const mx=Math.max(cap,...W.map(w=>w.need));const r=montRatio();
+  return `<section class="block"><h2>Montageplanning <span class="meta">jij monteert ± ${cap} u per week · <button class="copy" data-mcap>wijzig</button></span></h2>
+   <div class="list" style="padding:8px 0">${W.map(w=>{const e=new Date(w.s);e.setDate(e.getDate()+6);const over=w.over>2;return `<div class="hbar" title="${w.films.map(b=>esc(b.klant)).join(", ")}"><span>${w.s.getDate()}/${w.s.getMonth()+1}–${e.getDate()}/${e.getMonth()+1}</span><span class="tr" style="position:relative"><span style="width:${w.need/mx*100}%;${over?"background:var(--bad)":""}"></span><i style="position:absolute;top:-3px;bottom:-3px;left:${cap/mx*100}%;border-left:2px dashed var(--muted)"></i></span><b style="${over?"color:var(--bad)":""}">${Math.round(w.need)} u</b></div>`}).join("")}</div>
+   ${(()=>{const o=W.filter(w=>w.over>2);return o.length?`<p class="note" style="color:var(--bad)">${o.map(w=>`Week van ${w.s.getDate()}/${w.s.getMonth()+1}: ${Math.round(w.over)} u te veel (${w.films.map(b=>esc(b.klant)).join(", ")})`).join("<br>")}</p>`:`<p class="note">Je montage past in de komende weken.</p>`})()}
+   <p class="note">Elke shoot moet de week erna gemonteerd zijn (levertijd 1 week). Schatting: uren filmen × ${rnd1(r)} (jouw gemiddelde montage per uur film${S.bookings.some(b=>+b.montageUren>0&&filmH(b))?"":", standaard tot je montage-uren bijhoudt"}). Shoots zonder uren tellen als 6 u. Wat al in montage zit, telt in deze week.</p></section>`}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-mcap]"))return;const {sc,close}=openSheet(`<form><h3>Hoeveel uur monteer jij per week?</h3><p class="sub">Je avonden na je werk + weekend. Wees realistisch.</p><div class="f"><label for="f-mcap">Uren per week</label><input id="f-mcap" type="number" min="1" step="1" value="${montCap()}"></div><div class="actions"><div></div><div><button type="button" class="btn ghost" data-close>Annuleer</button><button class="btn">Bewaar</button></div></div></form>`);
+  sc.querySelector("form").addEventListener("submit",async ev=>{ev.preventDefault();const g=+sc.querySelector("#f-mcap").value||15;try{await db.doc("settings/finance").update({montageCap:g});S.settings.montageCap=g;toast("Bewaard");close();render()}catch(_){toast("Bewaren mislukt")}})});
+
+/* ---- minimumprijs-rekenaar ---- */
+function priceCalc(){const st=UI.pc||(UI.pc={uren:6,team:1,teamPer:100,rit:30,doel:+S.settings.doelUurloon||30,foto:0});
+  const r=montRatio(),mont=st.uren*r,rij=st.rit*2*1.15/60,teamK=st.team*st.teamPer,uren=st.uren+mont+rij;
+  const min=Math.ceil((st.doel*uren+teamK)/10)*10;
+  const huidig=250+Math.max(0,st.uren-1)*100;const huidigNet=(huidig-50-teamK)/uren;
+  return `<section class="block" id="pcalc"><h2>Minimumprijs-rekenaar <span class="meta">vóór je een offerte stuurt</span></h2>
+   <div class="entry"><div class="fgrid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div class="f"><label for="pc-uren">Uren filmen</label><input id="pc-uren" data-pc="uren" type="number" min="0.5" step="0.5" value="${st.uren}"></div>
+    <div class="f"><label for="pc-team">Teamleden mee</label><input id="pc-team" data-pc="team" type="number" min="0" step="1" value="${st.team}"></div>
+    <div class="f"><label for="pc-tp">Per teamlid (€)</label><input id="pc-tp" data-pc="teamPer" type="number" min="0" step="10" value="${st.teamPer}"></div>
+    <div class="f"><label for="pc-rit">Rijden, enkele rit (min)</label><input id="pc-rit" data-pc="rit" type="number" min="0" step="5" value="${st.rit}"></div>
+    <div class="f"><label for="pc-doel">Wat wil jij per uur netto? (€)</label><input id="pc-doel" data-pc="doel" type="number" min="5" step="1" value="${st.doel}"></div>
+   </div>
+   <div class="earn" style="margin-top:14px"><div class="earn-top"><div class="big">${eur(min)}</div><div><div class="lbl">Minimumprijs video</div><div class="rk">om € ${st.doel}/u netto over te houden</div></div></div>
+    <div class="earn-sum"><div><span>Filmen</span><b>${rnd1(st.uren)} u</b></div><div><span>Montage (schatting)</span><b>${rnd1(mont)} u</b><span>× ${rnd1(r)} per uur film</span></div><div><span>Rijden heen + terug</span><b>${rnd1(rij)} u</b></div><div><span>Team</span><b>${eur(teamK)}</b></div></div>
+    <div class="earn-miss" style="color:var(--fg)">Je huidige prijs voor ${rnd1(st.uren)} u: <b>${eur(huidig)}</b> (${eur(huidig-50)} met portfoliokorting) → jij houdt <b>${eur(huidigNet)}/u</b> over. ${huidig-50<min?`<span style="color:var(--bad)">Dat is ${eur(min-(huidig-50))} onder je minimum.</span>`:`<span style="color:var(--ok)">Dat zit boven je minimum.</span>`}</div></div>
+   <p class="note">In ${eur(min)} zit: jouw ${rnd1(uren)} uur × € ${st.doel} + ${eur(teamK)} voor je team. Zonder materiaal, brandstof en belastingen.</p></div></section>`}
+document.addEventListener("change",e=>{const i=e.target.closest("[data-pc]");if(!i)return;UI.pc=UI.pc||{};UI.pc[i.dataset.pc]=+i.value||0;
+  if(i.dataset.pc==="doel"&&canWrite)db.doc("settings/finance").update({doelUurloon:+i.value||30}).then(()=>{S.settings.doelUurloon=+i.value||30}).catch(()=>{});
+  const y=scrollY;render();scrollTo(0,y)});
 function montBlock(){const F=S.bookings.filter(b=>+b.montageUren>0&&b.status!=="Geannuleerd");
   if(!F.length)return `<section class="block"><h2>Montage & uurloon</h2><div class="empty">Nog geen montage-uren. Stuur me na elke sessie je uren, of vul ze in bij de boeking.</div></section>`;
-  const rows=F.map(b=>{const m=+b.montageUren,sh=filmH(b),p=earn(b).net;return{b,m,sh,p,tk:teamPaid(b),t:etype(b),eu:p&&(m+sh)?p/(m+sh):null,em:p&&m?p/m:null}}).sort((a,b)=>(b.b.datum||"").localeCompare(a.b.datum||""));
+  const rows=F.map(b=>{const m=+b.montageUren,sh=filmH(b)+rijH(b),p=earn(b).net;return{b,m,sh,p,tk:teamPaid(b),t:etype(b),eu:p&&(m+sh)?p/(m+sh):null,em:p&&m?p/m:null}}).sort((a,b)=>(b.b.datum||"").localeCompare(a.b.datum||""));
   const tm=rows.reduce((a,r)=>a+r.m,0),ts=rows.reduce((a,r)=>a+r.sh,0),tp=rows.reduce((a,r)=>a+r.p,0);
   const by={};rows.forEach(r=>{const o=by[r.t]=by[r.t]||{n:0,m:0,sh:0,p:0};o.n++;o.m+=r.m;o.sh+=r.sh;o.p+=r.p});
   const avgM=tm/rows.length;
   return `<section class="block"><h2>Montage & uurloon <span class="meta">${rows.length} film${rows.length>1?"s":""} bijgehouden</span></h2>
    <div class="kgrid">
-    <div class="tile dark"><div class="k">Gemiddeld netto uurloon</div><div class="v">${eur(tp/Math.max(1,tm+ts))}</div><div class="s">na loon team · filmen + monteren</div></div>
+    <div class="tile dark"><div class="k">Gemiddeld netto uurloon</div><div class="v">${eur(tp/Math.max(1,tm+ts))}</div><div class="s">na loon team · filmen + rijden + monteren</div></div>
     <div class="tile"><div class="k">Montage per film</div><div class="v">${Math.round(avgM*10)/10} u</div><div class="s">gemiddeld</div></div>
     <div class="tile"><div class="k">Totaal gemonteerd</div><div class="v">${Math.round(tm)} u</div><div class="s">+ ${Math.round(ts)} u gefilmd</div></div>
     <div class="tile"><div class="k">Montage vs filmen</div><div class="v">${ts?Math.round(tm/ts*10)/10+"×":"–"}</div><div class="s">uren montage per uur film</div></div>
@@ -1086,9 +1127,9 @@ function montBlock(){const F=S.bookings.filter(b=>+b.montageUren>0&&b.status!=="
    <div class="tbl-wrap"><table class="tbl" style="min-width:520px"><thead><tr><th style="text-align:left">Type</th><th>Films</th><th>Gem. montage</th><th>Gem. gefilmd</th><th>Gem. netto</th><th>€/uur</th></tr></thead><tbody>
     ${Object.entries(by).map(([t,o])=>`<tr><td style="text-align:left">${esc(t)}</td><td>${o.n}</td><td>${Math.round(o.m/o.n*10)/10} u</td><td>${o.sh?Math.round(o.sh/o.n*10)/10+" u":"–"}</td><td>${eur(o.p/o.n)}</td><td><b>${eur(o.p/Math.max(1,o.m+o.sh))}</b></td></tr>`).join("")}
    </tbody></table></div>
-   <div class="list" style="margin-top:12px">${rows.map(r=>`<button class="row two" data-edit="bookings:${r.b.id}"><div class="main-t"><div class="t">${esc(r.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(r.t)}</span></div><div class="d">${r.sh?r.sh+" u gefilmd · ":""}${r.m} u montage${r.tk?" · team "+eur(r.tk):""}${(r.b.montageLog||[]).length?" · "+r.b.montageLog.length+" sessies":""}</div></div><div class="amt">${r.eu?eur(r.eu)+"<small>/uur</small>":"–"}</div></button>`).join("")}</div>
+   <div class="list" style="margin-top:12px">${rows.map(r=>`<button class="row two" data-edit="bookings:${r.b.id}"><div class="main-t"><div class="t">${esc(r.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(r.t)}</span></div><div class="d">${r.sh?rnd1(r.sh)+" u filmen & rijden · ":""}${r.m} u montage${r.tk?" · team "+eur(r.tk):""}${(r.b.montageLog||[]).length?" · "+r.b.montageLog.length+" sessies":""}</div></div><div class="amt">${r.eu?eur(r.eu)+"<small>/uur</small>":"–"}</div></button>`).join("")}</div>
    ${(()=>{const L=earnRank().slice(0,5);return L.length?`<h3 style="margin:18px 0 8px;font-family:var(--display);font-size:17px">Beste klanten per uur</h3><div class="list">${L.map((x,i)=>`<button class="row two" data-edit="bookings:${x.b.id}"><div class="main-t"><div class="t">${i===0?"🏆 ":(i+1)+". "}${esc(x.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(etype(x.b))}</span></div><div class="d">${eur(x.e.net)} netto · ${rnd1(x.e.h)} u</div></div><div class="amt">${eur(x.e.ph)}<small>/uur</small></div></button>`).join("")}</div>`:""})()}
-   <p class="note">Netto uurloon = videoprijs min wat je team kreeg, gedeeld door (uren filmen + uren monteren). Vóór materiaal en belastingen. Hoe meer films je bijhoudt, hoe beter je ziet welk type event het best betaalt.</p></section>`}
+   <p class="note">Netto uurloon = videoprijs min wat je team kreeg, gedeeld door (uren filmen + heen en terug rijden + monteren). Vóór materiaal en belastingen. Hoe meer films je bijhoudt, hoe beter je ziet welk type event het best betaalt.</p></section>`}
 function addSession(id){const b=S.bookings.find(x=>x.id===id);if(!b)return;
   const {sc,close}=openSheet(`<form><h3>Montagesessie</h3><p class="sub">${esc(b.klant)}</p><div class="fgrid"><div class="f"><label for="ms-d">Datum</label><input id="ms-d" type="date" value="${iso(now())}"></div><div class="f"><label for="ms-h">Uren</label><input id="ms-h" type="number" inputmode="decimal" step="0.5" min="0.5" placeholder="bv. 5"></div>
    <div class="f full check"><input type="checkbox" id="ms-k"><label for="ms-k">Film is klaar (zet op Afgeleverd)</label></div></div>
@@ -1150,7 +1191,9 @@ V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Se
    <div class="chart"><div class="bars">${fc.map(x=>{const t=x.c+x.r+x.rec;return `<div class="bar" style="cursor:default"><span class="val">${t?eur(t).replace("€ ","€"):""}</span>${x.r?`<span class="seg r" style="height:${x.r/fmx*150}px"></span>`:""}${x.rec?`<span class="seg" style="height:${x.rec/fmx*150}px;background:var(--info)"></span>`:""}${x.c?`<span class="seg c" style="height:${x.c/fmx*150}px"></span>`:""}</div>`}).join("")}</div><div class="mlabels">${fc.map(x=>`<span>${MAAND[+x.k.slice(5,7)-1]}</span>`).join("")}</div></div>
    <div class="legend"><span><i style="background:var(--accent)"></i>Bevestigd</span><span><i style="background:color-mix(in srgb,var(--warn) 50%,var(--surface))"></i>Gereserveerd (telt voor 50%)</span><span><i style="background:var(--info)"></i>Vaste klanten</span></div></section>
   ${fcBlock()}
+  ${montPlanBlock()}
   ${montBlock()}
+  ${priceCalc()}
   <div class="cols"><div>
    <section class="block"><h2>Per type event <span class="meta">${yr==="alles"?"alles":yr}</span></h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Type</th><th>Shoots</th><th>Omzet</th><th>Gem.</th><th>€/uur</th></tr></thead><tbody>${Object.entries(typ).sort((a,b)=>b[1].omz-a[1].omz).map(([t,o])=>`<tr><td>${esc(t)}</td><td>${o.n}</td><td>${eur(o.omz)}</td><td>${eur(o.omz/Math.max(1,o.n))}</td><td>${o.h?eur(o.hv/o.h):"–"}</td></tr>`).join("")}</tbody></table></div></section>
    <section class="block"><h2>Waar je klanten vandaan komen</h2><div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead><tr><th>Kanaal</th><th>Boekingen</th><th>Omzet</th><th>Aanvragen</th><th>Omgezet</th></tr></thead><tbody>${[...new Set([...Object.keys(srcB),...Object.keys(srcL)])].sort((a,b)=>((srcB[b]||{}).omz||0)-((srcB[a]||{}).omz||0)).map(k=>{const b=srcB[k]||{n:0,omz:0},l=srcL[k]||{a:0,g:0,v:0};return `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${eur(b.omz)}</td><td>${l.a}</td><td>${l.g+l.v?Math.round(l.g/(l.g+l.v)*100)+"%":"–"}</td></tr>`}).join("")}</tbody></table></div>
