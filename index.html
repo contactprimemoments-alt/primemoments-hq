@@ -310,6 +310,15 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .bo-sec{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
 .bo-money{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:16px}
 .bo-money div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.earn{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.earn-top{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;background:var(--brown,#5A3E2C);color:#F6EDE3;padding:14px 16px}
+.earn-top .big{font-family:var(--display);font-size:30px;font-weight:600;line-height:1}.earn-top .big small{font-family:var(--body);font-size:13px;font-weight:500;opacity:.8}
+.earn-top .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}.earn-top .rk{font-size:13px;opacity:.9;margin-top:2px}
+.earn-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line)}
+.earn-sum div{background:var(--surface);padding:9px 10px;display:flex;flex-direction:column;min-width:0}.earn-sum span{font-size:11px;color:var(--muted)}.earn-sum b{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.earn-miss{padding:9px 14px;font-size:12.5px;color:var(--warn);background:var(--surface)}
+@media (max-width:420px){.earn-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pill.p-eu{background:var(--brown,#5A3E2C);color:#F6EDE3}
 .bo-money span{font-size:11.5px;color:var(--muted)}.bo-money b{font-family:var(--display);font-size:19px;font-weight:600}
 .bo-note{white-space:pre-wrap;font-size:14px;background:var(--bg);border-radius:12px;padding:10px 12px;margin:0}
 .pakrow{display:flex;align-items:center;gap:10px;margin-top:8px}.pakrow[hidden]{display:none}
@@ -519,7 +528,7 @@ function rowB(b,opt={}){const d=pd(b.datum);const fl=opt.noFlags?[]:flags(b);
    <div class="date${d?"":" none"}">${d?`<b>${d.getDate()}</b><span>${MAAND[d.getMonth()]}${d.getFullYear()!==now().getFullYear()?" '"+String(d.getFullYear()).slice(2):""}</span>`:`<b>?</b><span>datum</span>`}</div>
    <div class="main-t"><div class="t">${esc(b.klant)}${b.event?` <span style="color:var(--muted);font-weight:400">· ${esc(b.event)}</span>`:""}</div>
     <div class="d">${[b.start?(b.eind?`${esc(b.start)}–${esc(b.eind)}`:esc(b.start)):"",esc(b.locatie||"")].filter(Boolean).join(" · ")}</div>${!opt.noFlags&&vertrek(b)&&daysTo(b.datum)>=0?`<div class="d vt">🚗 vertrek ±${vertrek(b).tijd}</div>`:""}
-    <div class="pills">${pill(b.status)}${teamChips(b)}${fl.map(f=>pill(f,"p-bad")).join("")}${b.betaling==="Betaald"?pill("Betaald"):b.betaling==="Voorschot"?pill("Voorschot"):""}${b.levering==="In montage"?pill("In montage","p-In-montage"):""}</div></div>
+    <div class="pills">${pill(b.status)}${(()=>{const e=earn(b);return e.complete?pill(eur(e.ph)+"/u","p-eu"):""})()}${teamChips(b)}${fl.map(f=>pill(f,"p-bad")).join("")}${b.betaling==="Betaald"?pill("Betaald"):b.betaling==="Voorschot"?pill("Voorschot"):""}${b.levering==="In montage"?pill("In montage","p-In-montage"):""}</div></div>
    <div class="amt">${b.video?eur(b.video):(b.gratis?"<small>gratis</small>":"–")}${b.foto?`<small>+ foto ${eur(b.foto)}</small>`:""}</div></button>`;}
 function rowQ(b,kind){const lab=kind==="lev"?"✓ Afgeleverd":kind==="conf"?"✓ Bevestigd":"✓ Betaald";return `<div class="rowq">${rowB(b,{noFlags:1})}${canWrite?`<button type="button" class="qbtn" data-q="${kind}:${b.id}">${lab}</button>`:""}</div>`}
 function rowInv(i){const st=invStatus(i);return `<button class="row" data-inv="${i.id}">
@@ -1050,24 +1059,36 @@ document.addEventListener("click",e=>{const y=e.target.closest("[data-pyear]");i
     sc.querySelector("form").addEventListener("submit",async ev=>{ev.preventDefault();const g=+sc.querySelector("#f-loon").value||0;try{await db.doc("settings/finance").update({loon:g});S.settings.loon=g;toast("Bewaard");close();render()}catch(_){toast("Bewaren mislukt")}})}});
 /* ================= montage & uurloon ================= */
 const shootH=b=>{const s=tmin(b.start),e=tmin(b.eind);if(s===null||e===null)return null;let d=e-s;if(d<=0)d+=1440;return Math.round(d/6)/10};
+const filmH=b=>shootH(b)||(+b.filmUren||0);
+const teamPaid=b=>{if(b.teamKost!=null&&b.teamKost!=="")return +b.teamKost||0;return (S.kas||[]).filter(k=>k.soort==="Uit"&&k.boeking===b.id).reduce((a,k)=>a+(+k.bedrag||0),0)};
+function earn(b){const p=vid(b),t=teamPaid(b),f=filmH(b),m=+b.montageUren||0,h=f+m,net=p-t;return{p,t,f,m,h,net,ph:p&&h?net/h:null,complete:!!(p&&f&&m)}}
+const earnRank=()=>S.bookings.filter(b=>b.status!=="Geannuleerd").map(b=>({b,e:earn(b)})).filter(x=>x.e.complete).sort((a,c)=>c.e.ph-a.e.ph);
+const rnd1=n=>Math.round(n*10)/10;
+function earnBox(b){const e=earn(b);if(!e.p||daysTo(b.datum)===null||daysTo(b.datum)>0)return "";
+  const L=earnRank(),pos=L.findIndex(x=>x.b.id===b.id),best=L[0];
+  const miss=[!e.f?"uren gefilmd":"",!e.m?"montage-uren":""].filter(Boolean);
+  const rk=e.complete?(pos===0?`🏆 Je beste uurloon tot nu toe (van ${L.length})`:`Plaats ${pos+1} van ${L.length} · record: ${esc(best.b.klant)} ${eur(best.e.ph)}/u`):"";
+  return `<div class="earn"><div class="earn-top"><div class="big">${e.ph!=null?eur(e.ph)+"<small>/u</small>":"–"}</div><div><div class="lbl">Jij verdiende netto per uur</div><div class="rk">${rk||"Nog niet volledig: vul "+miss.join(" en ")+" in"}</div></div></div>
+   <div class="earn-sum"><div><span>Prijs video</span><b>${eur(e.p)}</b></div><div><span>Team kreeg</span><b>${e.t?"− "+eur(e.t):"€ 0"}</b></div><div><span>Netto voor jou</span><b>${eur(e.net)}</b></div><div><span>Jouw uren</span><b>${rnd1(e.h)} u</b><span>${rnd1(e.f)} film + ${rnd1(e.m)} montage</span></div></div></div>`}
 function montBlock(){const F=S.bookings.filter(b=>+b.montageUren>0&&b.status!=="Geannuleerd");
   if(!F.length)return `<section class="block"><h2>Montage & uurloon</h2><div class="empty">Nog geen montage-uren. Stuur me na elke sessie je uren, of vul ze in bij de boeking.</div></section>`;
-  const rows=F.map(b=>{const m=+b.montageUren,sh=shootH(b)||0,p=vid(b);return{b,m,sh,p,t:etype(b),eu:p&&(m+sh)?p/(m+sh):null,em:p&&m?p/m:null}}).sort((a,b)=>(b.b.datum||"").localeCompare(a.b.datum||""));
+  const rows=F.map(b=>{const m=+b.montageUren,sh=filmH(b),p=earn(b).net;return{b,m,sh,p,tk:teamPaid(b),t:etype(b),eu:p&&(m+sh)?p/(m+sh):null,em:p&&m?p/m:null}}).sort((a,b)=>(b.b.datum||"").localeCompare(a.b.datum||""));
   const tm=rows.reduce((a,r)=>a+r.m,0),ts=rows.reduce((a,r)=>a+r.sh,0),tp=rows.reduce((a,r)=>a+r.p,0);
   const by={};rows.forEach(r=>{const o=by[r.t]=by[r.t]||{n:0,m:0,sh:0,p:0};o.n++;o.m+=r.m;o.sh+=r.sh;o.p+=r.p});
   const avgM=tm/rows.length;
   return `<section class="block"><h2>Montage & uurloon <span class="meta">${rows.length} film${rows.length>1?"s":""} bijgehouden</span></h2>
    <div class="kgrid">
-    <div class="tile dark"><div class="k">Gemiddeld uurloon</div><div class="v">${eur(tp/Math.max(1,tm+ts))}</div><div class="s">per uur filmen + monteren</div></div>
+    <div class="tile dark"><div class="k">Gemiddeld netto uurloon</div><div class="v">${eur(tp/Math.max(1,tm+ts))}</div><div class="s">na loon team · filmen + monteren</div></div>
     <div class="tile"><div class="k">Montage per film</div><div class="v">${Math.round(avgM*10)/10} u</div><div class="s">gemiddeld</div></div>
     <div class="tile"><div class="k">Totaal gemonteerd</div><div class="v">${Math.round(tm)} u</div><div class="s">+ ${Math.round(ts)} u gefilmd</div></div>
     <div class="tile"><div class="k">Montage vs filmen</div><div class="v">${ts?Math.round(tm/ts*10)/10+"×":"–"}</div><div class="s">uren montage per uur film</div></div>
    </div>
-   <div class="tbl-wrap"><table class="tbl" style="min-width:520px"><thead><tr><th style="text-align:left">Type</th><th>Films</th><th>Gem. montage</th><th>Gem. gefilmd</th><th>Gem. prijs</th><th>€/uur</th></tr></thead><tbody>
+   <div class="tbl-wrap"><table class="tbl" style="min-width:520px"><thead><tr><th style="text-align:left">Type</th><th>Films</th><th>Gem. montage</th><th>Gem. gefilmd</th><th>Gem. netto</th><th>€/uur</th></tr></thead><tbody>
     ${Object.entries(by).map(([t,o])=>`<tr><td style="text-align:left">${esc(t)}</td><td>${o.n}</td><td>${Math.round(o.m/o.n*10)/10} u</td><td>${o.sh?Math.round(o.sh/o.n*10)/10+" u":"–"}</td><td>${eur(o.p/o.n)}</td><td><b>${eur(o.p/Math.max(1,o.m+o.sh))}</b></td></tr>`).join("")}
    </tbody></table></div>
-   <div class="list" style="margin-top:12px">${rows.map(r=>`<button class="row two" data-edit="bookings:${r.b.id}"><div class="main-t"><div class="t">${esc(r.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(r.t)}</span></div><div class="d">${r.sh?r.sh+" u gefilmd · ":""}${r.m} u montage${(r.b.montageLog||[]).length?" · "+r.b.montageLog.length+" sessies":""}</div></div><div class="amt">${r.eu?eur(r.eu)+"<small>/uur</small>":"–"}</div></button>`).join("")}</div>
-   <p class="note">Uurloon = videoprijs gedeeld door (uren filmen + uren monteren), vóór kosten, team en belastingen. Hoe meer films je bijhoudt, hoe beter je ziet welk type event het best betaalt.</p></section>`}
+   <div class="list" style="margin-top:12px">${rows.map(r=>`<button class="row two" data-edit="bookings:${r.b.id}"><div class="main-t"><div class="t">${esc(r.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(r.t)}</span></div><div class="d">${r.sh?r.sh+" u gefilmd · ":""}${r.m} u montage${r.tk?" · team "+eur(r.tk):""}${(r.b.montageLog||[]).length?" · "+r.b.montageLog.length+" sessies":""}</div></div><div class="amt">${r.eu?eur(r.eu)+"<small>/uur</small>":"–"}</div></button>`).join("")}</div>
+   ${(()=>{const L=earnRank().slice(0,5);return L.length?`<h3 style="margin:18px 0 8px;font-family:var(--display);font-size:17px">Beste klanten per uur</h3><div class="list">${L.map((x,i)=>`<button class="row two" data-edit="bookings:${x.b.id}"><div class="main-t"><div class="t">${i===0?"🏆 ":(i+1)+". "}${esc(x.b.klant)} <span style="color:var(--muted);font-weight:400">· ${esc(etype(x.b))}</span></div><div class="d">${eur(x.e.net)} netto · ${rnd1(x.e.h)} u</div></div><div class="amt">${eur(x.e.ph)}<small>/uur</small></div></button>`).join("")}</div>`:""})()}
+   <p class="note">Netto uurloon = videoprijs min wat je team kreeg, gedeeld door (uren filmen + uren monteren). Vóór materiaal en belastingen. Hoe meer films je bijhoudt, hoe beter je ziet welk type event het best betaalt.</p></section>`}
 function addSession(id){const b=S.bookings.find(x=>x.id===id);if(!b)return;
   const {sc,close}=openSheet(`<form><h3>Montagesessie</h3><p class="sub">${esc(b.klant)}</p><div class="fgrid"><div class="f"><label for="ms-d">Datum</label><input id="ms-d" type="date" value="${iso(now())}"></div><div class="f"><label for="ms-h">Uren</label><input id="ms-h" type="number" inputmode="decimal" step="0.5" min="0.5" placeholder="bv. 5"></div>
    <div class="f full check"><input type="checkbox" id="ms-k"><label for="ms-k">Film is klaar (zet op Afgeleverd)</label></div></div>
@@ -1084,7 +1105,7 @@ V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Se
   const sure=Y.filter(b=>b.status!=="Gereserveerd");const done=Y.filter(b=>b.datum<td&&b.status!=="Gereserveerd");
   const omz=sure.reduce((a,b)=>a+vid(b),0);const paid=sure.filter(b=>vid(b));const avg=paid.length?omz/paid.length:0;
   const uren=sure.reduce((a,b)=>a+hours(b),0);const withH=sure.filter(b=>vid(b)&&hours(b));const perH=withH.reduce((a,b)=>a+vid(b),0)/Math.max(1,withH.reduce((a,b)=>a+hours(b),0));
-  const withM=sure.filter(b=>vid(b)&&hours(b)&&+b.montageUren);const perHM=withM.length?withM.reduce((a,b)=>a+vid(b),0)/withM.reduce((a,b)=>a+hours(b)+(+b.montageUren),0):null;
+  const withM=sure.filter(b=>earn(b).complete);const perHM=withM.length?withM.reduce((a,b)=>a+earn(b).net,0)/withM.reduce((a,b)=>a+earn(b).h,0):null;
   const montTot=sure.reduce((a,b)=>a+(+b.montageUren||0),0);
   const fact=S.invoices.filter(i=>yr==="alles"||(i.datum||"").startsWith(yr)).reduce((a,i)=>a+invTotal(i),0);
   // photography
@@ -1116,7 +1137,7 @@ V.kpi=()=>{const yr=UI.kYear||String(now().getFullYear());const years=[...new Se
    <div class="tile"><div class="k">Gemiddeld per boeking</div><div class="v">${eur(avg)}</div></div>
    <div class="tile"><div class="k">Uren gefilmd</div><div class="v">${r1(uren)} u</div><div class="s">${done.length} shoots al gedaan</div></div>
    <div class="tile"><div class="k">Per uur filmen</div><div class="v">${eur(perH)}</div><div class="s">video ÷ shoot-uren</div></div>
-   <div class="tile ${perHM!=null?"good":""}"><div class="k">Echt uurloon</div><div class="v">${perHM!=null?eur(perHM):"–"}</div><div class="s">${perHM!=null?"incl. "+r1(montTot)+" u montage":"vul montage-uren in"}</div></div>
+   <div class="tile ${perHM!=null?"good":""}"><div class="k">Echt uurloon</div><div class="v">${perHM!=null?eur(perHM):"–"}</div><div class="s">${perHM!=null?"netto na team, incl. "+r1(montTot)+" u montage":"vul montage-uren in"}</div></div>
   </div></section>
   <section class="block"><h2>Fotografie <span class="meta">apart, telt niet mee in je omzet</span></h2><div class="kgrid">
    <div class="tile"><div class="k">Foto betaald door klanten</div><div class="v">${eur(fOmz)}</div><div class="s">${F.length} shoots</div></div>
@@ -1173,8 +1194,8 @@ const FORMS={
  bookings:{t:"Boeking",f:[["klant","Klant","text",1],["event","Event (söz, nişan, kına, düğün, business…)","text",1],["datum","Datum","date"],["locatie","Locatie","text"],["start","Van","time"],["eind","Tot","time"],
   ["status","Status","seg",1,STAT],["categorie","Categorie","seg",1,["Love Stories","Business","Kleine Momenten"]],["pakket","Pakket","pak",1],
   ["_","Prijs & betaling","sec"],["video","Video (€)","number"],["ontvangen","Al ontvangen (€)","number"],["betaling","Betaalstatus","seg",1,["Open","Voorschot","Betaald","Te checken"]],["betaalVia","Betaald via","seg",1,["Cash","Bank","Cash + bank"]],["ontvangenBank","Waarvan op de bank (€, bij cash + bank)","number"],["foto","Foto (€, telt niet mee)","number"],["gratis","Geen bedrag nodig (gratis / vriendendienst)","check"],
-  ["_","Team & levering","sec"],["team","Team op deze shoot","team",1],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["levering","Levering","seg",1,["Nog te filmen","In montage","Afgeleverd"]],["notitie","Notities (alleen voor jou)","textarea",1],
-  ["_","Meer details","more"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["fotoKost","Fotograaf krijgt (€)","number"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["montageUren","Montage-uren (jouw tijd)","number"],["reisMinHand","Reistijd zelf invullen (min, overschrijft de berekening)","number"]]},
+  ["_","Team & levering","sec"],["team","Team op deze shoot","team",1],["teamKost","Team kreeg (€, totaal voor deze shoot)","number"],["filmUren","Uren gefilmd (enkel als er geen van/tot is)","number"],["montageUren","Montage-uren (jouw tijd)","number"],["teamNotitie","Notitie voor het team (zij zien dit, geen prijzen)","textarea",1],["levering","Levering","seg",1,["Nog te filmen","In montage","Afgeleverd"]],["notitie","Notities (alleen voor jou)","textarea",1],
+  ["_","Meer details","more"],["contact","Contact (tel / Instagram)","text"],["kanaal","Via","select",0,["","Instagram","WhatsApp","Mail","Via via"]],["doorverwezen","Doorverwezen door","text"],["fotograaf","Fotograaf","text"],["fotoKost","Fotograaf krijgt (€)","number"],["portfolio","Portfolio toestemming","select",0,["","Ja","Deels","Nee"]],["betaalwijze","Betaalwijze","text"],["factuur","Factuurnr.","text"],["reisMinHand","Reistijd zelf invullen (min, overschrijft de berekening)","number"]]},
  team:{t:"Teamlid",f:[["naam","Naam","text",1],["code","Afkorting (bv. TK)","text"],["rol","Rol","select",0,["Camera","Tweede camera","Fotograaf","Drone","Helper","Assistent"]],["contact","Telefoon / Instagram","text",1],["actief","Actief","check"],["notitie","Notities","textarea",1]]},
  leads:{t:"Aanvraag",f:[["naam","Naam","text",1],["status","Stap","select",0,LSTAT],["kanaal","Via","select",0,["Instagram","WhatsApp","Mail","Via via","Team"]],["event","Event","text"],["datum","Gevraagde datum","date"],["start","Van","time"],["eind","Tot","time"],["locatie","Locatie","text",1],["ontvangen","Aanvraag binnen op","date"],["prijs","Offerte (€)","number"],["contact","Contact","text"],["notitie","Notities","textarea",1]]},
  kas:{t:"Kasbeweging",f:[["omschrijving","Omschrijving (bv. Bahri – Seher kına, camera)","text",1],["soort","Soort","seg",1,["Uit","In","Telling"]],["datum","Datum","date"],["bedrag","Bedrag (€) – bij Telling: wat er in je doos zit","number"],["wie","Aan/van wie (optioneel)","text"]]},
@@ -1296,6 +1317,7 @@ function openBooking(id){const get=()=>S.bookings.find(x=>x.id===id);if(!get())r
       ${fact("👥",(teamChips(b)?`<span class="pills" style="display:inline-flex">${teamChips(b)}</span>`:"")+(b.fotograaf?` Fotograaf: ${esc(b.fotograaf)}`:""))}
       ${fact("📞",esc(b.contact||""))}
      </div>
+     ${earnBox(b)}
      <div class="bo-sec">Status</div>${segRow("status",STAT,b.status)}
      <div class="bo-sec">Betaling</div>${segRow("betaling",["Open","Voorschot","Betaald"],b.betaling)}
      <div class="bo-sec">Levering</div>${segRow("levering",["Nog te filmen","In montage","Afgeleverd"],b.levering)}
