@@ -367,6 +367,8 @@ table.tbl{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
 .kasbox span{font-size:12px;color:var(--muted)}.kasbox b{font-family:var(--display);font-size:24px;font-weight:600}.kasbox .bad b{color:var(--bad)}.kasbox .ok b{color:var(--ok)}
 .bo-mont{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .bo-mont b{font-family:var(--display);font-size:20px}.bo-mont small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.paydet summary{list-style:none;cursor:pointer}.paydet summary::-webkit-details-marker{display:none}
+.paylist{padding:0 14px 10px 14px;display:grid;gap:4px}.paylist div{display:grid;grid-template-columns:52px 1fr auto;gap:8px;font-size:13px;color:var(--muted)}.paylist b{color:var(--fg);font-weight:500}
 /* ---- invoice paper (always light, it's a printed document) ---- */
 .paper-wrap{overflow-x:auto;margin:0 -4px;padding:4px}
 .paper{background:#fff;color:#0F0F0F;border:1px solid #E4DACF;border-radius:6px;padding:32px;min-width:560px;font-family:"Poppins",system-ui,sans-serif;font-size:12px;line-height:1.5}
@@ -831,6 +833,12 @@ document.addEventListener("change",async e=>{const c=e.target.closest("[data-sho
   const set=new Set(b.shotDone||[]);c.checked?set.add(c.value):set.delete(c.value);try{await db.doc("bookings/"+b.id).update({shotDone:[...set]})}catch(err){toast("Bewaren mislukt")}});
 document.addEventListener("submit",async e=>{const f=e.target.closest("[data-shotadd]");if(!f)return;e.preventDefault();const v=f.querySelector("input").value.trim();if(!v)return;
   const b=S.bookings.find(x=>x.id===f.dataset.shotadd);if(!b)return;await db.doc("bookings/"+b.id).update({shotExtra:[...(b.shotExtra||[]),v]}).catch(()=>toast("Bewaren mislukt"))});
+function teamPayBlock(){const P=(S.kas||[]).filter(k=>k.soort==="Uit"&&k.wie&&!/privé|prive|mama|papa/i.test(k.wie));
+  if(!P.length)return "";const by={};P.forEach(k=>{const n=k.wie.split(/[ (]/)[0];const o=by[n]=by[n]||{n,tot:0,items:[],ext:/extern/i.test(k.wie)};o.tot+=+k.bedrag||0;o.items.push(k)});
+  const L=Object.values(by).sort((a,b)=>b.tot-a.tot);const tot=L.reduce((a,o)=>a+o.tot,0);
+  return `<section class="block"><h2>Uitbetaald aan team <span class="meta">${eur(tot)} totaal</span></h2><div class="list">${L.map(o=>`<details class="paydet"><summary class="row two"><div class="main-t"><div class="t">${esc(o.n)}${o.ext?' <span style="color:var(--muted);font-weight:400">· extern</span>':""}</div><div class="d">${o.items.length} shoot${o.items.length>1?"s":""} · gemiddeld ${eur(o.tot/o.items.length)}</div></div><div class="amt"><b>${eur(o.tot)}</b></div></summary>
+    <div class="paylist">${sorted(o.items,"datum").map(k=>`<div><span>${dShort(k.datum)}</span><span>${esc((k.omschrijving||"").replace(/^[^–]*–\s*/,""))}</span><b>${eur(+k.bedrag||0)}</b></div>`).join("")}</div></details>`).join("")}</div>
+   <p class="note">Komt uit Kas & bank. Nieuwe betaling? Kas & bank › − Cash uit, en vul bij "Aan wie" de naam in.</p></section>`}
 function teamAnalysis(){const yr=UI.taYear||String(now().getFullYear());const T=S.team;
   const years=[...new Set(S.bookings.filter(b=>(b.team||[]).length).map(b=>(b.datum||"").slice(0,4)).filter(Boolean).concat([String(now().getFullYear())]))].sort();
   const B=S.bookings.filter(b=>b.status!=="Geannuleerd"&&(b.datum||"").startsWith(yr)&&(b.team||[]).length);
@@ -843,6 +851,7 @@ function teamAnalysis(){const yr=UI.taYear||String(now().getFullYear());const T=
   const usedT=ETYPES.filter(t=>st.some(x=>x.per[t]));
   return `<div class="toolbar"><div class="chips">${years.map(y=>`<button class="chip" data-tay="${y}" aria-pressed="${y===yr}">${y}</button>`).join("")}</div></div>
    <div class="lead"><div class="tile dark"><div class="k">Meeste uren ${yr}</div><div class="v">${most&&most.u?esc(most.m.naam.split(" ")[0])+" · "+Math.round(most.u)+" u":"–"}</div></div>${usedT.slice(0,5).map(t=>`<div class="tile"><div class="k">Meeste ${esc(t.toLowerCase())}</div><div class="v">${esc(top(t))}</div></div>`).join("")}</div>
+   ${teamPayBlock()}
    <section class="block"><h2>Uren per teamlid <span class="meta">gepland + gewerkt · ${yr}</span></h2><div class="list" style="padding:8px 0">${st.map(x=>`<div class="hbar"><span>${esc(x.m.naam)}</span><span class="tr"><span style="width:${x.u/mxU*100}%"></span></span><b>${Math.round(x.u*10)/10} u</b></div>`).join("")}</div></section>
    <section class="block"><h2>Shoots per type <span class="meta">${yr}</span></h2><div class="tbl-wrap"><table class="tbl matrix"><thead><tr><th>Teamlid</th>${usedT.map(t=>`<th>${esc(t)}</th>`).join("")}<th>Totaal</th></tr></thead><tbody>
     ${st.map(x=>`<tr><td>${esc(x.m.naam)}</td>${usedT.map(t=>{const mx=Math.max(...st.map(y=>y.per[t]));return `<td class="${x.per[t]&&x.per[t]===mx?"hi":""}">${x.per[t]||"–"}</td>`}).join("")}<td><b>${x.n}</b></td></tr>`).join("")}
